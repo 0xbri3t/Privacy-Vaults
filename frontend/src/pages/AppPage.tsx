@@ -11,7 +11,7 @@ import { erc20Abi, createPublicClient, http } from "viem";
 import { AnimatedBackground } from "../components/AnimatedBackground";
 import { USDC_ADDRESSES } from "../integrations/x402/networks";
 import { ERC20_BALANCE_OF_ABI } from "../integrations/x402/contracts";
-import { address } from "framer-motion/client";
+import { address, div } from "framer-motion/client";
 
 import { base, baseSepolia } from "viem/chains";
 
@@ -36,53 +36,42 @@ import {
   hasSufficientBalance,
   isDestinationConfigured,
 } from "../features/paywall/utils/paymentGuards";
+import { Spinner } from "../features/paywall/components/Spinner";
 
-// type Token = "USDC" | "ETH";
 type Tab = "deposit" | "withdraw";
 
-// token object with attributes
 type Token = {
   name: string;
   symbol: string;
   address?: `0x${string}`;
-  icon: typeof UsdcIcon;
+  icon: string;
 }
 
 const tokens = [
-  { name: "USD Coin", symbol: "USDC", address: undefined, icon: UsdcIcon },
-  { name: "Ether", symbol: "ETH", address: undefined, icon: EthIcon },
+  { name: "USD Coin", symbol: "USDC", address: undefined, icon: "/usdcLogo.svg" },
+  { name: "EUR Coin", symbol: "EURC", address: undefined, icon: "/eurcLogo.svg" },
 ]
 
 const BALANCE_REFRESH_INTERVAL_MS = 3000;
 
+// const depositButtonTheme = {
+//   '--ck-connectbutton-width': '100%',
+//   '--ck-connectbutton-font-size': '16px',
+//   '--ck-connectbutton-font-weight': '600',
+//   '--ck-connectbutton-border-radius': '12px',
+//   '--ck-connectbutton-color': '#ffffff',
+//   '--ck-connectbutton-background': 'linear-gradient(to right, #8b5cf6, #22d3ee)',
+//   '--ck-connectbutton-box-shadow': '0 10px 15px -3px rgba(139, 92, 246, 0.2)',
+//   '--ck-connectbutton-hover-color': '#ffffff',
+//   '--ck-connectbutton-hover-background': 'linear-gradient(to right, #8b5cf6, #22d3ee)',
+//   '--ck-connectbutton-hover-box-shadow': '0 10px 15px -3px rgba(139, 92, 246, 0.3)',
+//   '--ck-connectbutton-active-color': '#ffffff',
+//   '--ck-connectbutton-active-background': 'linear-gradient(to right, #8b5cf6, #22d3ee)',
+//   '--ck-connectbutton-active-box-shadow': '0 10px 15px -3px rgba(139, 92, 246, 0.3)',
+// } as const;
+
 
 const amounts = [1, 2, 5, 10];
-
-function UsdcIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 32 32" fill="none">
-      <circle cx="16" cy="16" r="16" fill="#2775CA" />
-      <path
-        d="M20.4 18.4c0-2-1.2-2.7-3.6-3-.8-.1-1.6-.3-2.4-.6-.5-.2-.8-.6-.8-1.2 0-.7.5-1.1 1.4-1.2 1.5-.2 2.7.2 3.4.5l.5-1.8c-.8-.4-1.8-.6-2.7-.7V9h-1.6v1.5c-1.8.3-3 1.4-3 3 0 1.8 1.2 2.6 3.6 2.9.8.1 1.6.4 2.4.7.5.2.8.6.8 1.2 0 .8-.6 1.3-1.6 1.4-1.5.1-3-.3-3.8-.8l-.5 1.9c.9.5 2 .7 3.1.8V23h1.6v-1.5c1.9-.3 3.1-1.4 3.1-3.1z"
-        fill="#fff"
-      />
-    </svg>
-  );
-}
-
-function EthIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 32 32" fill="none">
-      <circle cx="16" cy="16" r="16" fill="#627EEA" />
-      <path d="M16.5 4v8.87l7.5 3.35L16.5 4z" fill="#fff" fillOpacity=".6" />
-      <path d="M16.5 4L9 16.22l7.5-3.35V4z" fill="#fff" />
-      <path d="M16.5 21.97v6.03L24 17.62l-7.5 4.35z" fill="#fff" fillOpacity=".6" />
-      <path d="M16.5 28V21.97L9 17.62 16.5 28z" fill="#fff" />
-      <path d="M16.5 20.57l7.5-4.35-7.5-3.35v7.7z" fill="#fff" fillOpacity=".2" />
-      <path d="M9 16.22l7.5 4.35v-7.7L9 16.22z" fill="#fff" fillOpacity=".6" />
-    </svg>
-  );
-}
 
 
 function TokenDropdown({
@@ -114,7 +103,7 @@ function TokenDropdown({
         className="flex w-full items-center justify-between gap-2 rounded-xl border border-zinc-700 bg-zinc-800/50 px-4 py-3 text-sm font-medium text-white transition hover:border-zinc-600"
       >
         <span className="flex items-center gap-2.5">
-          <selected.icon className="h-5 w-5" />
+          <img src={selected.icon} alt={selected.name} className="h-5 w-5 rounded-full" />
           {selected.symbol}
         </span>
         <ChevronDownIcon
@@ -143,7 +132,7 @@ function TokenDropdown({
                     : "text-zinc-300"
                     }`}
                 >
-                  <t.icon className="h-5 w-5" />
+                  <img src={t.icon} alt={t.name} className="h-5 w-5 rounded-full" />
                   {t.symbol}
                 </button>
               </li>
@@ -159,14 +148,24 @@ function DepositTab({
   isAuthenticated,
   address,
   balance,
+  isCorrectChain,
+  isWorking,
+  onRefreshBalance,
+  onSwitchNetwork,
+  onSubmitPayment,
 }: {
   isAuthenticated: boolean;
   address: `0x${string}` | undefined;
   balance: number | null;
+  isCorrectChain: boolean;
+  isWorking: boolean;
+  onRefreshBalance: () => void;
+  onSwitchNetwork: () => void;
+  onSubmitPayment: () => void;
 }) {
   const [token, setToken] = useState<Token>(tokens[0]);
   const [amount, setAmount] = useState<number>(1);
-  
+
   return (
     <div className="space-y-6">
       {/* Token selector */}
@@ -208,9 +207,14 @@ function DepositTab({
       </div>
 
       {/* Action button */}
-      {isAuthenticated ? (
-        <button className="w-full rounded-xl bg-linear-to-r from-violet-500 to-cyan-400 py-3.5 text-base font-semibold text-white shadow-lg shadow-violet-500/20 transition hover:shadow-violet-500/30 hover:opacity-95">
-          Deposit
+      {isAuthenticated && isCorrectChain ? (
+        <button 
+        className="w-full rounded-xl bg-linear-to-r from-violet-500 to-cyan-400 py-3.5 text-base font-semibold text-white shadow-lg shadow-violet-500/20 transition hover:shadow-violet-500/30 hover:opacity-95"
+        onClick={onSubmitPayment}
+        disabled={isWorking}
+        type="button"
+        >
+          {isWorking ? <Spinner /> : "Deposit"}
         </button>
       ) : (
         <button
@@ -218,6 +222,7 @@ function DepositTab({
         >
           Log In to Deposit
         </button>
+          // <OpenfortButton label="Log In to deposit" customTheme={depositButtonTheme} />
       )}
 
     </div>
@@ -287,6 +292,7 @@ function WithdrawTab({
         >
           Log In to Withdraw
         </button>
+        // <OpenfortButton label="Log In to withdraw" customTheme={depositButtonTheme} />
       )}
     </div>
   );
@@ -301,7 +307,6 @@ export function AppPage() {
   // Derive payment chain details
   const paymentChain = initialNetwork === "base" ? base : baseSepolia;
   const chainName = initialNetwork === "base" ? "Base" : "Base Sepolia";
-  const testnet = initialNetwork !== "base";
 
   const { address, isConnected, chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
@@ -312,7 +317,6 @@ export function AppPage() {
   const {
     state: paymentState,
     paymentRequirements,
-    amount,
     statusMessage,
     error: flowError,
     successContent,
@@ -360,126 +364,123 @@ export function AppPage() {
 
 
   const handlePayment = useCallback(async () => {
-      if (!paymentRequirements || !address) {
-        return;
+    if (!paymentRequirements || !address) {
+      return;
+    }
+
+    const validRequirements = ensureValidAmount(paymentRequirements);
+    const requiredAmount = getRequiredAmount(validRequirements);
+
+    try {
+      const balance = await getUSDCBalance(publicClient as any, address);
+      if (!hasSufficientBalance(balance, requiredAmount)) {
+        throw new Error(`Insufficient balance. Make sure you have USDC on ${chainName}.`);
       }
-  
-      const validRequirements = ensureValidAmount(paymentRequirements);
-      const requiredAmount = getRequiredAmount(validRequirements);
-  
-      try {
-        const balance = await getUSDCBalance(publicClient as any, address);
-        if (!hasSufficientBalance(balance, requiredAmount)) {
-          throw new Error(`Insufficient balance. Make sure you have USDC on ${chainName}.`);
-        }
-  
-        if (!isDestinationConfigured(validRequirements.payTo)) {
-          throw new Error("Payment destination not configured. Please contact support.");
-        }
-  
-        const hash = await writeContractAsync({
-          address: validRequirements.asset,
-          abi: erc20Abi,
-          functionName: "transfer",
-          args: [validRequirements.payTo, requiredAmount],
-          chainId: paymentChain.id,
-        });
-  
-        initiatePayment(hash);
-      } catch (error) {
-        console.error("Payment failed", error);
+
+      if (!isDestinationConfigured(validRequirements.payTo)) {
+        throw new Error("Payment destination not configured. Please contact support.");
       }
-    }, [
-      address,
-      chainName,
-      paymentChain.id,
-      paymentRequirements,
-      publicClient,
-      writeContractAsync,
-      initiatePayment,
-    ]);
-  
-    const connectWallet = useCallback(
-      (wallet: UserWallet) => {
-        void setActiveWallet(wallet.id);
-      },
-      [setActiveWallet],
+
+      const hash = await writeContractAsync({
+        address: validRequirements.asset,
+        abi: erc20Abi,
+        functionName: "transfer",
+        args: [validRequirements.payTo, requiredAmount],
+        chainId: paymentChain.id,
+      });
+
+      initiatePayment(hash);
+    } catch (error) {
+      console.error("Payment failed", error);
+    }
+  }, [
+    address,
+    chainName,
+    paymentChain.id,
+    paymentRequirements,
+    publicClient,
+    writeContractAsync,
+    initiatePayment,
+  ]);
+
+  const connectWallet = useCallback(
+    (wallet: UserWallet) => {
+      void setActiveWallet(wallet.id);
+    },
+    [setActiveWallet],
+  );
+
+  const handleTryAnotherPayment = useCallback(() => {
+    resetPayment();
+    void refreshBalance(true);
+  }, [resetPayment, refreshBalance]);
+
+  // Show loading state
+  if (paymentState === "loading" && !paymentRequirements) {
+    return (
+      <LoadingState
+        title="Payment Required"
+        subtitle="Loading payment details..."
+      />
     );
-  
-    const handleTryAnotherPayment = useCallback(() => {
-      resetPayment();
-      void refreshBalance(true);
-    }, [resetPayment, refreshBalance]);
-  
-    // Show loading state
-    if (paymentState === "loading" && !paymentRequirements) {
-      return (
-        <LoadingState
-          title="Payment Required"
-          subtitle="Loading payment details..."
-        />
-      );
-    }
-  
-    // Show error state
-    if (paymentState === "error" || flowError) {
-      return (
-        <ErrorState
-          title="Payment Configuration Error"
-          message={statusMessage || "We could not retrieve payment requirements from the server."}
-          actionLabel="Retry"
-          onAction={() => {
-            void refetchRequirements();
-          }}
-        />
-      );
-    }
-  
-    if (!paymentRequirements) {
-      return (
-        <ErrorState
-          title="Payment Configuration Missing"
-          message="No payment requirements were provided. Please check your server configuration."
-        />
-      );
-    }
-  
-    if (!isAuthenticated) {
-      return <AuthPrompt />;
-    }
-  
-    if (isLoadingWallets || wallets.length === 0) {
-      return (
-        <LoadingState
-          title="Setting up your wallet"
-          subtitle="We're preparing your embedded Openfort wallet."
-        />
-      );
-    }
-  
-    if (!isConnected || !address) {
-      return (
-        <WalletSelector
-          wallets={wallets}
-          isConnecting={isConnecting}
-          onSelect={connectWallet}
-        />
-      );
-    }
-  
-    // Show success state
-    if (paymentState === "success" && successContent) {
-      return (
-        <PaymentSuccess
-          content={successContent}
-          onReset={handleTryAnotherPayment}
-        />
-      );
-    }
-  
-    // Show payment summary
-    const isWorking = paymentState === "paying" || paymentState === "confirming" || paymentState === "unlocking" || isWritePending;
-  
+  }
+
+  // Show error state
+  if (paymentState === "error" || flowError) {
+    return (
+      <ErrorState
+        title="Payment Configuration Error"
+        message={statusMessage || "We could not retrieve payment requirements from the server."}
+        actionLabel="Retry"
+        onAction={() => {
+          void refetchRequirements();
+        }}
+      />
+    );
+  }
+
+  if (!paymentRequirements) {
+    return (
+      <ErrorState
+        title="Payment Configuration Missing"
+        message="No payment requirements were provided. Please check your server configuration."
+      />
+    );
+  }
+
+
+  // if (isLoadingWallets || wallets.length === 0) {
+  //   return (
+  //     <LoadingState
+  //       title="Setting up your wallet"
+  //       subtitle="We're preparing your embedded Openfort wallet."
+  //     />
+  //   );
+  // }
+
+  // if (!isConnected || !address) {
+  //   return (
+  //     <WalletSelector
+  //       wallets={wallets}
+  //       isConnecting={isConnecting}
+  //       onSelect={connectWallet}
+  //     />
+  //   );
+  // }
+
+  // Show success state
+  if (paymentState === "success" && successContent) {
+    return (
+      <PaymentSuccess
+        content={successContent}
+        onReset={handleTryAnotherPayment}
+      />
+    );
+  }
+
+  // Show payment summary
+  const isWorking = paymentState === "paying" || paymentState === "confirming" || paymentState === "unlocking" || isWritePending;
+
 
   return (
     <div className="relative flex min-h-screen flex-col text-white">
@@ -506,7 +507,6 @@ export function AppPage() {
           transition={{ duration: 0.5 }}
           className="glass-card w-full max-w-md rounded-2xl overflow-hidden"
         >
-          {/* Tabs — full width, flush with top edge */}
           <div className="flex">
             {(["deposit", "withdraw"] as const).map((t) => (
               <button
@@ -524,7 +524,18 @@ export function AppPage() {
 
           <div className="min-h-[370px] p-8">
             {tab === "deposit" ? (
-              <DepositTab isAuthenticated={isAuthenticated} address={address} balance={Number(formattedUsdcBalance)}  />
+              <DepositTab 
+              isAuthenticated={isAuthenticated} 
+              address={address} 
+              balance={Number(formattedUsdcBalance) }
+              isCorrectChain={isCorrectChain}
+              isWorking={isWorking} 
+              onRefreshBalance={() => {
+                void refreshBalance(true);
+              }}
+              onSwitchNetwork={handleSwitchChain}
+              onSubmitPayment={handlePayment}
+              />
             ) : (
               <WithdrawTab
                 isAuthenticated={isAuthenticated}

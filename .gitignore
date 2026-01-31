@@ -58,3 +58,7 @@ coverage/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+
+zk-setup/*.ptau
+zk-setup/*.zkey

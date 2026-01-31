@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../MerkleTreeWithHistory.sol";
 import "../interfaces/IVerifier.sol";
 
-abstract contract PrivacyVault is MerkleTreeWithHistory, ReentrancyGuard {
+contract PrivacyVault is MerkleTreeWithHistory, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable token;

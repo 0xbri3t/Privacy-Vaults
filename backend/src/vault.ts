@@ -117,7 +117,10 @@ export async function relayVaultDeposit(
         const rpcUrl = getRpcUrl(vaultConfig.chainId);
 
         // Create wallet client for relayer
-        const account = privateKeyToAccount(`0x${vaultConfig.relayerPrivateKey}` as Address);
+        const rawKey = vaultConfig.relayerPrivateKey.startsWith("0x")
+            ? vaultConfig.relayerPrivateKey
+            : `0x${vaultConfig.relayerPrivateKey}`;
+        const account = privateKeyToAccount(rawKey as `0x${string}`);
         const walletClient = createWalletClient({
             account,
             chain,

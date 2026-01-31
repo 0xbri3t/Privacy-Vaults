@@ -1,4 +1,9 @@
-import { concat, keccak256, toBytes } from 'viem'
+import { concat, keccak256, toBytes, toHex } from 'viem'
+
+// BN254 scalar field prime - commitments must be less than this value
+const FIELD_SIZE = BigInt(
+  '21888242871839275222246405745257275088548364400416034343698204186575808495617',
+)
 
 /**
  * Generates a random note (secret)
@@ -39,8 +44,10 @@ export function generateNullifier(): bigint {
 export function createCommitment(note: bigint, nullifier: bigint): string {
   const noteBytes = toBytes(note, { size: 32 })
   const nullifierBytes = toBytes(nullifier, { size: 32 })
-  const commitment = keccak256(concat([noteBytes, nullifierBytes]))
-  return commitment
+  const hash = keccak256(concat([noteBytes, nullifierBytes]))
+  // Reduce modulo BN254 field size so the commitment fits in the MiMC Merkle tree
+  const reduced = BigInt(hash) % FIELD_SIZE
+  return toHex(reduced, { size: 32 })
 }
 
 /**

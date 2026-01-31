@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { createPublicClient, http } from 'viem'
 import { base, baseSepolia } from 'viem/chains'
-import { useAccount, useWalletClient } from 'wagmi'
+import { useAccount, useSwitchChain, useWalletClient } from 'wagmi'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { ErrorState } from '../features/paywall/components/ErrorState'
 import { LoadingState } from '../features/paywall/components/LoadingState'
@@ -129,8 +129,8 @@ function TokenDropdown({
                     setOpen(false)
                   }}
                   className={`flex w-full items-center gap-2.5 px-4 py-3 text-sm transition hover:bg-zinc-700/50 ${t.symbol === value.symbol
-                      ? 'text-white bg-violet-500/10'
-                      : 'text-zinc-300'
+                    ? 'text-white bg-violet-500/10'
+                    : 'text-zinc-300'
                     }`}
                 >
                   <img
@@ -157,6 +157,7 @@ function DepositTab({
   isWorking,
   depositError,
   onSubmitPayment,
+  onSwitchChain,
 }: {
   isAuthenticated: boolean
   address: `0x${string}` | undefined
@@ -165,6 +166,7 @@ function DepositTab({
   isWorking: boolean
   depositError: string | null
   onSubmitPayment: () => void
+  onSwitchChain: () => void
 }) {
   const [token, setToken] = useState<Token>(tokens[0])
   const [amount, setAmount] = useState<number>(1)
@@ -200,8 +202,8 @@ function DepositTab({
                 key={a}
                 onClick={() => setAmount(a)}
                 className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-all ${active
-                    ? 'border-violet-500/60 bg-violet-500/10 text-white shadow-[0_0_20px_rgba(139,92,246,0.15)]'
-                    : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+                  ? 'border-violet-500/60 bg-violet-500/10 text-white shadow-[0_0_20px_rgba(139,92,246,0.15)]'
+                  : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
                   }`}
               >
                 {a}
@@ -217,6 +219,23 @@ function DepositTab({
           {depositError}
         </div>
       )}
+
+      {isAuthenticated && !isCorrectChain && (
+        <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/20 px-4 py-3 text-sm text-yellow-200">
+          <p className="font-medium mb-2">Wrong Network</p>
+          <p className="text-xs text-yellow-200/80 mb-3">
+            You're connected to the wrong network. Please switch to Base Sepolia.
+          </p>
+          <button
+            onClick={onSwitchChain}
+            className="w-full rounded-lg bg-yellow-500 py-2 text-sm font-semibold text-black transition hover:bg-yellow-400"
+            type="button"
+          >
+            Switch to Base Sepolia
+          </button>
+        </div>
+      )}
+
       {isAuthenticated && isCorrectChain ? (
         <button
           className="w-full rounded-xl bg-linear-to-r from-violet-500 to-cyan-400 py-3.5 text-base font-semibold text-white shadow-lg shadow-violet-500/20 transition hover:shadow-violet-500/30 hover:opacity-95"
@@ -226,12 +245,12 @@ function DepositTab({
         >
           {isWorking ? <Spinner /> : 'Deposit'}
         </button>
-      ) : (
+      ) : !isAuthenticated ? (
         <button className="w-full rounded-xl bg-linear-to-r from-violet-500 to-cyan-400 py-3.5 text-base font-semibold text-white shadow-lg shadow-violet-500/20 transition hover:shadow-violet-500/30 hover:opacity-95">
           Log In to Deposit
         </button>
         // <OpenfortButton label="Log In to deposit" customTheme={depositButtonTheme} />
-      )}
+      ) : null}
     </div>
   )
 }
@@ -354,13 +373,13 @@ export function AppPage() {
   // Check if we're on the correct chain
   const isCorrectChain = isConnected && chainId === paymentChain.id
 
+  const { switchChain } = useSwitchChain()
+
   const [isDepositing, setIsDepositing] = useState(false)
   const [depositError, setDepositError] = useState<string | null>(null)
 
   const handlePayment = useCallback(async () => {
-    if (!address || !walletClient) {
-      return
-    }
+    if (!address || !walletClient) return
 
     const vaultConfig = getVaultConfig(paymentChain.id)
     const requiredAmount = vaultConfig.denomination
@@ -368,13 +387,6 @@ export function AppPage() {
     try {
       setDepositError(null)
       setIsDepositing(true)
-
-      const vaultBytecode = await publicClient.getBytecode({
-        address: vaultConfig.vaultAddress,
-      })
-      if (!vaultBytecode) {
-        throw new Error('Vault contract not deployed on the connected network.')
-      }
 
       const balance = await getUSDCBalance(publicClient, address)
       if (!hasSufficientBalance(balance, requiredAmount)) {
@@ -389,7 +401,6 @@ export function AppPage() {
         )
       }
 
-      // Generate vault note BEFORE making payment
       const note = generateVaultNote()
 
       const authorization = await createVaultAuthorization(
@@ -401,11 +412,10 @@ export function AppPage() {
         paymentChain.id,
       )
 
+      // Send signed authorization to relayer (user only signs, relayer pays gas)
       const response = await fetch(VAULT_DEPOSIT_ENDPOINT, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           commitment: note.commitment,
           from: authorization.from,
@@ -572,8 +582,8 @@ export function AppPage() {
                 key={t}
                 onClick={() => setTab(t)}
                 className={`flex-1 py-3.5 text-sm font-semibold transition-all ${tab === t
-                    ? 'bg-linear-to-r from-violet-500 to-cyan-400 text-white'
-                    : 'bg-white/5 text-zinc-500 hover:text-zinc-300 hover:bg-white/10'
+                  ? 'bg-linear-to-r from-violet-500 to-cyan-400 text-white'
+                  : 'bg-white/5 text-zinc-500 hover:text-zinc-300 hover:bg-white/10'
                   }`}
               >
                 {t === 'deposit' ? 'Deposit' : 'Withdraw'}
@@ -591,6 +601,7 @@ export function AppPage() {
                 isWorking={isWorking}
                 depositError={depositError}
                 onSubmitPayment={handlePayment}
+                onSwitchChain={() => switchChain({ chainId: paymentChain.id })}
               />
             ) : (
               <WithdrawTab

@@ -12,7 +12,8 @@ contract MockHasher {
 
     function MiMCSponge(
         uint256 xL,
-        uint256 xR
+        uint256 xR,
+        uint256 /* k */
     ) external pure returns (uint256, uint256) {
         // Simple hash for testing - in production use real MiMC
         uint256 hash = uint256(keccak256(abi.encodePacked(xL, xR))) %

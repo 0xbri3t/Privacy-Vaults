@@ -1,4 +1,4 @@
-import { type Address, getAddress, type Hex, parseSignature, toHex } from 'viem'
+import { type Address, getAddress, type Hex, toHex } from 'viem'
 
 import { AUTHORIZATION_TYPES } from './contracts'
 import { getNetworkId } from './networks'
@@ -213,13 +213,15 @@ export async function createVaultAuthorization(
   const signature: Hex = await client.signTypedData({
     account: from,
     domain: {
-      name: 'USD Coin',
+      name: 'USDC',
       version: '2',
       chainId,
       verifyingContract: getAddress(usdcAddress),
     },
-    types: AUTHORIZATION_TYPES,
-    primaryType: 'TransferWithAuthorization',
+    types: {
+      ReceiveWithAuthorization: AUTHORIZATION_TYPES.ReceiveWithAuthorization,
+    },
+    primaryType: 'ReceiveWithAuthorization',
     message: {
       from: getAddress(from),
       to: getAddress(to),
@@ -230,17 +232,10 @@ export async function createVaultAuthorization(
     },
   })
 
-  const parsed = parseSignature(signature)
+  const r = `0x${signature.slice(2, 66)}` as Hex
+  const s = `0x${signature.slice(66, 130)}` as Hex
+  const vRaw = parseInt(signature.slice(130, 132), 16)
+  const v = vRaw < 27 ? vRaw + 27 : vRaw
 
-  return {
-    from,
-    to,
-    value,
-    validAfter,
-    validBefore,
-    nonce,
-    v: parsed.v !== undefined ? Number(parsed.v) : parsed.yParity + 27,
-    r: parsed.r,
-    s: parsed.s,
-  }
+  return { from, to, value, validAfter, validBefore, nonce, v, r, s }
 }

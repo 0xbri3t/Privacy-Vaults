@@ -9,7 +9,7 @@ import "../MerkleTreeWithHistory.sol";
 import "../interfaces/IVerifier.sol";
 
 interface IERC3009 {
-    function transferWithAuthorization(
+    function receiveWithAuthorization(
         address from,
         address to,
         uint256 value,
@@ -72,7 +72,7 @@ contract PrivacyVault is MerkleTreeWithHistory, ReentrancyGuard {
     }
 
     /**
-     * @notice Deposit funds using EIP-3009 TransferWithAuthorization (gasless)
+     * @notice Deposit funds using EIP-3009 ReceiveWithAuthorization
      * @dev Verifies EIP-3009 signature and executes transfer atomically
      * @param _commitment The secret commitment hash
      * @param _from The account to transfer from
@@ -100,7 +100,7 @@ contract PrivacyVault is MerkleTreeWithHistory, ReentrancyGuard {
         commitments[_commitment] = true;
 
         // EIP-3009: single call verifies signature AND transfers tokens
-        IERC3009(address(token)).transferWithAuthorization(
+        IERC3009(address(token)).receiveWithAuthorization(
             _from,
             address(this),
             denomination,

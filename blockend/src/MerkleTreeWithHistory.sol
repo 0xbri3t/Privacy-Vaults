@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 interface IHasher {
-    function MiMCSponge(uint256 in_xL, uint256 in_xR) external pure returns (uint256 xL, uint256 xR);
+    function MiMCSponge(uint256 in_xL, uint256 in_xR, uint256 k) external pure returns (uint256 xL, uint256 xR);
 }
 
 contract MerkleTreeWithHistory {
@@ -75,9 +75,9 @@ contract MerkleTreeWithHistory {
 
         uint256 R = leftValue;
         uint256 C = 0;
-        (R, C) = _hasher.MiMCSponge(R, C);
+        (R, C) = _hasher.MiMCSponge(R, C, 0);
         R = addmod(R, rightValue, FIELD_SIZE);
-        (R, C) = _hasher.MiMCSponge(R, C);
+        (R, C) = _hasher.MiMCSponge(R, C, 0);
         return bytes32(R);
     }
 

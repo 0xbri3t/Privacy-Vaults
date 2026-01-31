@@ -21,7 +21,7 @@ export const VAULT_CONFIG: Record<
 
     // Base Sepolia (Chain ID 84532)
     84532: {
-        vaultAddress: '0x22F5Ef39A7871e739223da3b6F3f868c1c803e54', // PrivacyVault deployed with real Groth16Verifier + MiMC Hasher
+        vaultAddress: '0xF2Cb083928B4dD761FC9f5a2233b21DB85504934', // PrivacyVault deployed with real Groth16Verifier + MiMC Hasher
         usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', // USDC on Base Sepolia
         denomination: BigInt('1000000'), // 1 USDC (6 decimals)
     },

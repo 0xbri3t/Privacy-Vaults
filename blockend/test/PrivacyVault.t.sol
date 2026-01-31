@@ -69,7 +69,7 @@ contract PrivacyVaultTest is Test {
 
     // ============ HELPERS ============
 
-    function _signTransferAuth(
+    function _signReceiveAuth(
         uint256 pk,
         address from,
         address to,
@@ -80,7 +80,7 @@ contract PrivacyVaultTest is Test {
     ) internal view returns (uint8 v, bytes32 r, bytes32 s) {
         bytes32 structHash = keccak256(
             abi.encode(
-                usdc.TRANSFER_WITH_AUTHORIZATION_TYPEHASH(),
+                usdc.RECEIVE_WITH_AUTHORIZATION_TYPEHASH(),
                 from,
                 to,
                 value,
@@ -107,7 +107,7 @@ contract PrivacyVaultTest is Test {
         uint256 validAfter = 0;
         uint256 validBefore = block.timestamp + 1 hours;
 
-        (uint8 v, bytes32 r, bytes32 s) = _signTransferAuth(
+        (uint8 v, bytes32 r, bytes32 s) = _signReceiveAuth(
             pk, from, address(vault), denomination, validAfter, validBefore, nonce
         );
 
@@ -116,9 +116,9 @@ contract PrivacyVaultTest is Test {
         );
     }
 
-    // ============ DEPOSIT TESTS ============
+    // ============ DEPOSIT WITH AUTHORIZATION TESTS ============
 
-    function test_Deposit_Success() public {
+    function test_DepositWithAuth_Success() public {
         bytes32 nonce = bytes32(uint256(1));
 
         vm.expectEmit(true, false, false, true);
@@ -130,7 +130,7 @@ contract PrivacyVaultTest is Test {
         assertEq(usdc.balanceOf(user1), initialUserBalance - denomination);
     }
 
-    function test_Deposit_MultipleUsers() public {
+    function test_DepositWithAuth_MultipleUsers() public {
         _depositAs(user1Pk, user1, commitment1, bytes32(uint256(1)));
         _depositAs(user2Pk, user2, commitment2, bytes32(uint256(2)));
 
@@ -139,13 +139,14 @@ contract PrivacyVaultTest is Test {
         assertEq(usdc.balanceOf(address(vault)), denomination * 2);
     }
 
-    function test_Deposit_RejectsDuplicateCommitment() public {
+    function test_DepositWithAuth_RejectsDuplicateCommitment() public {
         _depositAs(user1Pk, user1, commitment1, bytes32(uint256(1)));
 
+        // Sign before expectRevert
         uint256 validAfter = 0;
         uint256 validBefore = block.timestamp + 1 hours;
         bytes32 nonce2 = bytes32(uint256(2));
-        (uint8 v, bytes32 r, bytes32 s) = _signTransferAuth(
+        (uint8 v, bytes32 r, bytes32 s) = _signReceiveAuth(
             user2Pk, user2, address(vault), denomination, validAfter, validBefore, nonce2
         );
 
@@ -155,11 +156,11 @@ contract PrivacyVaultTest is Test {
         );
     }
 
-    function test_Deposit_RejectsZeroCommitment() public {
+    function test_DepositWithAuth_RejectsZeroCommitment() public {
         uint256 validAfter = 0;
         uint256 validBefore = block.timestamp + 1 hours;
         bytes32 nonce = bytes32(uint256(99));
-        (uint8 v, bytes32 r, bytes32 s) = _signTransferAuth(
+        (uint8 v, bytes32 r, bytes32 s) = _signReceiveAuth(
             user1Pk, user1, address(vault), denomination, validAfter, validBefore, nonce
         );
 
@@ -169,11 +170,11 @@ contract PrivacyVaultTest is Test {
         );
     }
 
-    function test_Deposit_RejectsInvalidSignature() public {
+    function test_DepositWithAuth_RejectsInvalidSignature() public {
         uint256 validAfter = 0;
         uint256 validBefore = block.timestamp + 1 hours;
         bytes32 nonce = bytes32(uint256(77));
-        (uint8 v, bytes32 r, bytes32 s) = _signTransferAuth(
+        (uint8 v, bytes32 r, bytes32 s) = _signReceiveAuth(
             user1Pk, user1, address(vault), denomination, validAfter, validBefore, nonce
         );
 
@@ -185,11 +186,11 @@ contract PrivacyVaultTest is Test {
         );
     }
 
-    function test_Deposit_RejectsExpiredAuth() public {
+    function test_DepositWithAuth_RejectsExpiredAuth() public {
         uint256 validAfter = 0;
         uint256 validBefore = block.timestamp - 1;
         bytes32 nonce = bytes32(uint256(88));
-        (uint8 v, bytes32 r, bytes32 s) = _signTransferAuth(
+        (uint8 v, bytes32 r, bytes32 s) = _signReceiveAuth(
             user1Pk, user1, address(vault), denomination, validAfter, validBefore, nonce
         );
 
@@ -199,14 +200,14 @@ contract PrivacyVaultTest is Test {
         );
     }
 
-    function test_Deposit_RejectsReusedNonce() public {
+    function test_DepositWithAuth_RejectsReusedNonce() public {
         bytes32 nonce = bytes32(uint256(55));
         _depositAs(user1Pk, user1, commitment1, nonce);
 
-        // Sign before expectRevert 
+        // Sign before expectRevert
         uint256 validAfter = 0;
         uint256 validBefore = block.timestamp + 1 hours;
-        (uint8 v, bytes32 r, bytes32 s) = _signTransferAuth(
+        (uint8 v, bytes32 r, bytes32 s) = _signReceiveAuth(
             user1Pk, user1, address(vault), denomination, validAfter, validBefore, nonce
         );
 

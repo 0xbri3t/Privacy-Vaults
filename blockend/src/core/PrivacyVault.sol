@@ -3,6 +3,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../MerkleTreeWithHistory.sol";
@@ -70,6 +71,51 @@ contract PrivacyVault is MerkleTreeWithHistory, ReentrancyGuard {
         commitments[_commitment] = true;
 
         token.safeTransferFrom(msg.sender, address(this), denomination);
+
+        emit Deposit(_commitment, insertedIndex, block.timestamp);
+    }
+
+    /**
+     * @notice Deposit funds using EIP-3009 TransferWithAuthorization (gasless)
+     * @dev Verifies EIP-3009 signature and executes transfer atomically
+     * @param _commitment The secret commitment hash
+     * @param _from The account to transfer from
+     * @param _validAfter The unix time after which the transfer is valid
+     * @param _validBefore The unix time before which the transfer is valid
+     * @param _nonce The unique nonce for this authorization
+     * @param _v ECDSA signature component v
+     * @param _r ECDSA signature component r
+     * @param _s ECDSA signature component s
+     */
+    function depositWithAuthorization(
+        bytes32 _commitment,
+        address _from,
+        uint256 _validAfter,
+        uint256 _validBefore,
+        bytes32 _nonce,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
+    ) external nonReentrant {
+        if (_commitment == bytes32(0)) revert InvalidCommitment();
+        if (commitments[_commitment]) revert InvalidCommitment();
+
+        // Call permit to authorize transfer (handles EIP-3009 signature verification)
+        IERC20Permit(address(token)).permit(
+            _from,
+            address(this),
+            denomination,
+            _validBefore,
+            _v,
+            _r,
+            _s
+        );
+
+        uint32 insertedIndex = _insert(_commitment);
+        commitments[_commitment] = true;
+
+        // Transfer the tokens from the user
+        token.safeTransferFrom(_from, address(this), denomination);
 
         emit Deposit(_commitment, insertedIndex, block.timestamp);
     }

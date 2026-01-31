@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import type { Openfort } from "@openfort/openfort-node";
 import type { Config } from "./config.js";
 import { decodePaymentHeader, createPaymentRequiredResponse } from "./payment.js";
+import { relayVaultDeposit, type VaultDepositRequest } from "./vault.js";
 
 export async function handleHealth(_req: Request, res: Response): Promise<void> {
   res.status(200).json({
@@ -97,6 +98,54 @@ export async function handleProtectedContent(
     res.status(402).json({
       error: "Invalid payment",
       x402Version: 1,
+    });
+  }
+}
+
+/**
+ * Relays a vault deposit with EIP-3009 authorization
+ * @param req Request with VaultDepositRequest body
+ * @param res Response with transaction hash or error
+ * @param vaultConfig Vault configuration
+ */
+export async function handleVaultDeposit(
+  req: Request,
+  res: Response,
+  vaultConfig: Config["vault"]
+): Promise<void> {
+  try {
+    const body = req.body as VaultDepositRequest;
+
+    // Validate required fields
+    if (!body.commitment || !body.from || !body.v || !body.r || !body.s) {
+      res.status(400).json({
+        error: "Missing required fields: commitment, from, v, r, s",
+      });
+      return;
+    }
+
+    // Execute relayer
+    const result = await relayVaultDeposit(body, vaultConfig);
+
+    if (!result.success) {
+      res.status(500).json({
+        error: "Failed to relay vault deposit",
+        details: result.error,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Vault deposit relayed successfully",
+      transactionHash: result.transactionHash,
+      blockNumber: result.blockNumber,
+    });
+  } catch (error) {
+    console.error("Vault deposit error:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : "Unknown error",
     });
   }
 }

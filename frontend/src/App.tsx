@@ -1,6 +1,6 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { LandingPage } from "./pages/LandingPage";
-import { AppPage } from "./pages/AppPage";
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { AppPage } from './pages/AppPage'
+import { LandingPage } from './pages/LandingPage'
 
 function App() {
   return (
@@ -10,7 +10,7 @@ function App() {
         <Route path="/app" element={<AppPage />} />
       </Routes>
     </BrowserRouter>
-  );
+  )
 }
 
-export default App;
+export default App

@@ -1,12 +1,42 @@
-import { motion } from "framer-motion";
+import { motion } from 'framer-motion'
 
 const orbs = [
-  { size: 300, x: "10%", y: "20%", color: "rgba(139,92,246,0.15)", duration: 20 },
-  { size: 250, x: "70%", y: "10%", color: "rgba(34,211,238,0.12)", duration: 25 },
-  { size: 200, x: "80%", y: "60%", color: "rgba(139,92,246,0.10)", duration: 22 },
-  { size: 350, x: "30%", y: "70%", color: "rgba(34,211,238,0.08)", duration: 28 },
-  { size: 150, x: "50%", y: "40%", color: "rgba(139,92,246,0.12)", duration: 18 },
-];
+  {
+    size: 300,
+    x: '10%',
+    y: '20%',
+    color: 'rgba(139,92,246,0.15)',
+    duration: 20,
+  },
+  {
+    size: 250,
+    x: '70%',
+    y: '10%',
+    color: 'rgba(34,211,238,0.12)',
+    duration: 25,
+  },
+  {
+    size: 200,
+    x: '80%',
+    y: '60%',
+    color: 'rgba(139,92,246,0.10)',
+    duration: 22,
+  },
+  {
+    size: 350,
+    x: '30%',
+    y: '70%',
+    color: 'rgba(34,211,238,0.08)',
+    duration: 28,
+  },
+  {
+    size: 150,
+    x: '50%',
+    y: '40%',
+    color: 'rgba(139,92,246,0.12)',
+    duration: 18,
+  },
+]
 
 export function AnimatedBackground() {
   return (
@@ -31,10 +61,10 @@ export function AnimatedBackground() {
           transition={{
             duration: orb.duration,
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: 'easeInOut',
           }}
         />
       ))}
     </div>
-  );
+  )
 }

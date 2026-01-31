@@ -18,6 +18,13 @@ interface PaywallConfig {
   payment: PaymentConfig;
 }
 
+interface VaultConfig {
+  vaultAddress: string;
+  usdcAddress: string;
+  chainId: number;
+  relayerPrivateKey: string;
+}
+
 interface ShieldConfig {
   publishableKey: string;
   secretKey: string;
@@ -33,6 +40,7 @@ export interface Config {
   port: number;
   allowedOrigins: string[];
   paywall: PaywallConfig;
+  vault: VaultConfig;
   openfort: OpenfortConfig;
 }
 
@@ -67,6 +75,12 @@ export function loadConfig(): Config {
           version: process.env.X402_ASSET_VERSION ?? "",
         },
       },
+    },
+    vault: {
+      vaultAddress: process.env.VAULT_ADDRESS ?? "0x0000000000000000000000000000000000000000",
+      usdcAddress: process.env.USDC_ADDRESS ?? "0x0000000000000000000000000000000000000000",
+      chainId: toNumber(process.env.CHAIN_ID) ?? 84532,
+      relayerPrivateKey: process.env.RELAYER_PRIVATE_KEY ?? "",
     },
     openfort: {
       secretKey: process.env.OPENFORT_SECRET_KEY ?? "",

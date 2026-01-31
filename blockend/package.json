@@ -1,0 +1,8 @@
+{
+  "name": "blockend-tools",
+  "private": true,
+  "type": "commonjs",
+  "devDependencies": {
+    "circomlib": "^0.5.1"
+  }
+}

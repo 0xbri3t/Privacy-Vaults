@@ -3,9 +3,9 @@ import { OpenfortButton, useUser } from '@openfort/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { createPublicClient, erc20Abi, http } from 'viem'
+import { createPublicClient, http } from 'viem'
 import { base, baseSepolia } from 'viem/chains'
-import { useAccount, useSwitchChain, useWriteContract } from 'wagmi'
+import { useAccount, useWalletClient } from 'wagmi'
 import { AnimatedBackground } from '../components/AnimatedBackground'
 import { ErrorState } from '../features/paywall/components/ErrorState'
 import { LoadingState } from '../features/paywall/components/LoadingState'
@@ -16,15 +16,12 @@ import { usePaymentFlow } from '../features/paywall/hooks/usePaymentFlow'
 import { useUsdcBalance } from '../features/paywall/hooks/useUsdcBalance'
 
 import {
-  getRequiredAmount,
   hasSufficientBalance,
   isDestinationConfigured,
 } from '../features/paywall/utils/paymentGuards'
-import {
-  ensureValidAmount,
-  getUSDCBalance,
-  type SupportedNetwork,
-} from '../integrations/x402'
+import { getUSDCBalance, type SupportedNetwork } from '../integrations/x402'
+import { createVaultAuthorization } from '../integrations/x402/payments'
+import { getVaultConfig } from '../integrations/vault/config'
 import { generateVaultNote, type VaultNote } from '../integrations/zk/notes'
 
 type Tab = 'deposit' | 'withdraw'
@@ -52,6 +49,9 @@ const tokens = [
 ]
 
 const BALANCE_REFRESH_INTERVAL_MS = 3000
+const VAULT_DEPOSIT_ENDPOINT =
+  import.meta.env.VITE_VAULT_DEPOSIT_ENDPOINT ??
+  'http://localhost:3007/api/vault/deposit'
 
 // const depositButtonTheme = {
 //   '--ck-connectbutton-width': '100%',
@@ -128,11 +128,10 @@ function TokenDropdown({
                     onChange(t)
                     setOpen(false)
                   }}
-                  className={`flex w-full items-center gap-2.5 px-4 py-3 text-sm transition hover:bg-zinc-700/50 ${
-                    t.symbol === value.symbol
+                  className={`flex w-full items-center gap-2.5 px-4 py-3 text-sm transition hover:bg-zinc-700/50 ${t.symbol === value.symbol
                       ? 'text-white bg-violet-500/10'
                       : 'text-zinc-300'
-                  }`}
+                    }`}
                 >
                   <img
                     src={t.icon}
@@ -156,6 +155,7 @@ function DepositTab({
   balance,
   isCorrectChain,
   isWorking,
+  depositError,
   onSubmitPayment,
 }: {
   isAuthenticated: boolean
@@ -163,8 +163,7 @@ function DepositTab({
   balance: number | null
   isCorrectChain: boolean
   isWorking: boolean
-  onRefreshBalance: () => void
-  onSwitchNetwork: () => void
+  depositError: string | null
   onSubmitPayment: () => void
 }) {
   const [token, setToken] = useState<Token>(tokens[0])
@@ -200,11 +199,10 @@ function DepositTab({
               <button
                 key={a}
                 onClick={() => setAmount(a)}
-                className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-all ${
-                  active
+                className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-all ${active
                     ? 'border-violet-500/60 bg-violet-500/10 text-white shadow-[0_0_20px_rgba(139,92,246,0.15)]'
                     : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
-                }`}
+                  }`}
               >
                 {a}
               </button>
@@ -214,6 +212,11 @@ function DepositTab({
       </div>
 
       {/* Action button */}
+      {depositError && (
+        <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          {depositError}
+        </div>
+      )}
       {isAuthenticated && isCorrectChain ? (
         <button
           className="w-full rounded-xl bg-linear-to-r from-violet-500 to-cyan-400 py-3.5 text-base font-semibold text-white shadow-lg shadow-violet-500/20 transition hover:shadow-violet-500/30 hover:opacity-95"
@@ -312,7 +315,7 @@ export function AppPage() {
   const chainName = initialNetwork === 'base' ? 'Base' : 'Base Sepolia'
 
   const { address, isConnected, chainId } = useAccount()
-  const { switchChainAsync } = useSwitchChain()
+  const { data: walletClient } = useWalletClient()
   const { isAuthenticated } = useUser()
 
   // Unified payment flow hook
@@ -322,7 +325,6 @@ export function AppPage() {
     statusMessage,
     error: flowError,
     successContent,
-    initiatePayment,
     refetch: refetchRequirements,
     reset: resetPayment,
   } = usePaymentFlow({
@@ -349,38 +351,39 @@ export function AppPage() {
       refreshIntervalMs: BALANCE_REFRESH_INTERVAL_MS,
     })
 
-  const { writeContractAsync, isPending: isWritePending } = useWriteContract()
-
   // Check if we're on the correct chain
   const isCorrectChain = isConnected && chainId === paymentChain.id
 
-  const handleSwitchChain = useCallback(async () => {
-    if (isCorrectChain) return
-
-    try {
-      await switchChainAsync({ chainId: paymentChain.id })
-    } catch (error) {
-      console.error('Failed to switch network', error)
-    }
-  }, [isCorrectChain, switchChainAsync, paymentChain.id])
+  const [isDepositing, setIsDepositing] = useState(false)
+  const [depositError, setDepositError] = useState<string | null>(null)
 
   const handlePayment = useCallback(async () => {
-    if (!paymentRequirements || !address) {
+    if (!address || !walletClient) {
       return
     }
 
-    const validRequirements = ensureValidAmount(paymentRequirements)
-    const requiredAmount = getRequiredAmount(validRequirements)
+    const vaultConfig = getVaultConfig(paymentChain.id)
+    const requiredAmount = vaultConfig.denomination
 
     try {
-      const balance = await getUSDCBalance(publicClient as any, address)
+      setDepositError(null)
+      setIsDepositing(true)
+
+      const vaultBytecode = await publicClient.getBytecode({
+        address: vaultConfig.vaultAddress,
+      })
+      if (!vaultBytecode) {
+        throw new Error('Vault contract not deployed on the connected network.')
+      }
+
+      const balance = await getUSDCBalance(publicClient, address)
       if (!hasSufficientBalance(balance, requiredAmount)) {
         throw new Error(
           `Insufficient balance. Make sure you have USDC on ${chainName}.`,
         )
       }
 
-      if (!isDestinationConfigured(validRequirements.payTo)) {
+      if (!isDestinationConfigured(vaultConfig.vaultAddress)) {
         throw new Error(
           'Payment destination not configured. Please contact support.',
         )
@@ -389,29 +392,60 @@ export function AppPage() {
       // Generate vault note BEFORE making payment
       const note = generateVaultNote()
 
-      const hash = await writeContractAsync({
-        address: validRequirements.asset,
-        abi: erc20Abi,
-        functionName: 'transfer',
-        args: [validRequirements.payTo, requiredAmount],
-        chainId: paymentChain.id,
+      const authorization = await createVaultAuthorization(
+        walletClient,
+        address,
+        vaultConfig.vaultAddress,
+        requiredAmount,
+        vaultConfig.usdcAddress,
+        paymentChain.id,
+      )
+
+      const response = await fetch(VAULT_DEPOSIT_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          commitment: note.commitment,
+          from: authorization.from,
+          to: authorization.to,
+          value: authorization.value.toString(),
+          validAfter: authorization.validAfter.toString(),
+          validBefore: authorization.validBefore.toString(),
+          nonce: authorization.nonce,
+          v: authorization.v,
+          r: authorization.r,
+          s: authorization.s,
+        }),
       })
 
-      initiatePayment(hash)
-      // Store note to be revealed after success
+      if (!response.ok) {
+        const errorText = await response
+          .text()
+          .catch(() => response.statusText)
+        throw new Error(`Vault deposit failed: ${errorText}`)
+      }
+
+      const result = (await response.json()) as { success?: boolean }
+      if (!result.success) {
+        throw new Error('Vault deposit failed: unknown error')
+      }
+
       setRevealedNote(note)
     } catch (error) {
       console.error('Payment failed', error)
+      setDepositError(error instanceof Error ? error.message : 'Deposit failed')
       setRevealedNote(null)
+    } finally {
+      setIsDepositing(false)
     }
   }, [
     address,
     chainName,
     paymentChain.id,
-    paymentRequirements,
     publicClient,
-    writeContractAsync,
-    initiatePayment,
+    walletClient,
   ])
 
   const handleTryAnotherPayment = useCallback(() => {
@@ -499,7 +533,7 @@ export function AppPage() {
     paymentState === 'paying' ||
     paymentState === 'confirming' ||
     paymentState === 'unlocking' ||
-    isWritePending
+    isDepositing
 
   return (
     <div className="relative flex min-h-screen flex-col text-white">
@@ -537,11 +571,10 @@ export function AppPage() {
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`flex-1 py-3.5 text-sm font-semibold transition-all ${
-                  tab === t
+                className={`flex-1 py-3.5 text-sm font-semibold transition-all ${tab === t
                     ? 'bg-linear-to-r from-violet-500 to-cyan-400 text-white'
                     : 'bg-white/5 text-zinc-500 hover:text-zinc-300 hover:bg-white/10'
-                }`}
+                  }`}
               >
                 {t === 'deposit' ? 'Deposit' : 'Withdraw'}
               </button>
@@ -556,10 +589,7 @@ export function AppPage() {
                 balance={Number(formattedUsdcBalance)}
                 isCorrectChain={isCorrectChain}
                 isWorking={isWorking}
-                onRefreshBalance={() => {
-                  void refreshBalance(true)
-                }}
-                onSwitchNetwork={handleSwitchChain}
+                depositError={depositError}
                 onSubmitPayment={handlePayment}
               />
             ) : (
@@ -571,6 +601,13 @@ export function AppPage() {
           </div>
         </motion.div>
       </main>
+      {revealedNote && (
+        <NoteRevealModal
+          note={revealedNote}
+          isOpen={true}
+          onClose={() => setRevealedNote(null)}
+        />
+      )}
     </div>
   )
 }

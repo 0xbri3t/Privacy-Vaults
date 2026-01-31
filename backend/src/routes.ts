@@ -114,12 +114,33 @@ export async function handleVaultDeposit(
   vaultConfig: Config["vault"]
 ): Promise<void> {
   try {
-    const body = req.body as VaultDepositRequest;
+    const parsedBody = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const authorization = parsedBody?.authorization ?? parsedBody?.payload?.authorization ?? parsedBody;
+    const body = {
+      commitment: parsedBody?.commitment ?? parsedBody?.payload?.commitment,
+      from: authorization?.from ?? parsedBody?.from,
+      to: authorization?.to ?? parsedBody?.to,
+      value: authorization?.value ?? parsedBody?.value,
+      validAfter: authorization?.validAfter ?? parsedBody?.validAfter,
+      validBefore: authorization?.validBefore ?? parsedBody?.validBefore,
+      nonce: authorization?.nonce ?? parsedBody?.nonce,
+      v: authorization?.v ?? parsedBody?.v,
+      r: authorization?.r ?? parsedBody?.r,
+      s: authorization?.s ?? parsedBody?.s,
+    } as VaultDepositRequest;
 
     // Validate required fields
-    if (!body.commitment || !body.from || !body.v || !body.r || !body.s) {
+    if (
+      !body.commitment ||
+      !body.from ||
+      body.v === undefined ||
+      body.v === null ||
+      !body.r ||
+      !body.s
+    ) {
       res.status(400).json({
         error: "Missing required fields: commitment, from, v, r, s",
+        receivedKeys: Object.keys(parsedBody ?? {}),
       });
       return;
     }

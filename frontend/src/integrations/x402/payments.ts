@@ -1,4 +1,4 @@
-import { type Address, getAddress, type Hex, toHex } from 'viem'
+import { type Address, getAddress, type Hex, parseSignature, toHex } from 'viem'
 
 import { AUTHORIZATION_TYPES } from './contracts'
 import { getNetworkId } from './networks'
@@ -19,7 +19,6 @@ export interface VaultAuthorization {
   validAfter: bigint
   validBefore: bigint
   nonce: Hex
-  signature: Hex
   v: number
   r: Hex
   s: Hex
@@ -197,13 +196,6 @@ function toBase64(data: string): string {
 
 /**
  * Creates a vault deposit authorization (EIP-3009 signature)
- * @param client Wallet client with signTypedData capability
- * @param from User's wallet address
- * @param to Vault contract address
- * @param value Amount to transfer (denomination)
- * @param usdcAddress USDC token address for domain
- * @param chainId Chain ID for domain
- * @returns Authorization with signature components
  */
 export async function createVaultAuthorization(
   client: any,
@@ -215,37 +207,30 @@ export async function createVaultAuthorization(
 ): Promise<VaultAuthorization> {
   const nowSeconds = Math.floor(Date.now() / 1000)
   const validAfter = BigInt(nowSeconds - 600)
-  const validBefore = BigInt(nowSeconds + 3600) // 1 hour validity
+  const validBefore = BigInt(nowSeconds + 3600)
   const nonce = createNonce()
 
-  const domain = {
-    name: 'USD Coin',
-    version: '2',
-    chainId,
-    verifyingContract: getAddress(usdcAddress),
-  }
-
-  const message = {
-    from: getAddress(from),
-    to: getAddress(to),
-    value,
-    validAfter,
-    validBefore,
-    nonce,
-  }
-
-  const signature = await client.signTypedData({
+  const signature: Hex = await client.signTypedData({
     account: from,
-    domain,
+    domain: {
+      name: 'USD Coin',
+      version: '2',
+      chainId,
+      verifyingContract: getAddress(usdcAddress),
+    },
     types: AUTHORIZATION_TYPES,
     primaryType: 'TransferWithAuthorization',
-    message,
+    message: {
+      from: getAddress(from),
+      to: getAddress(to),
+      value,
+      validAfter,
+      validBefore,
+      nonce,
+    },
   })
 
-  // Parse signature components (v, r, s)
-  const r = `0x${signature.slice(2, 66)}` as Hex
-  const s = `0x${signature.slice(66, 130)}` as Hex
-  const v = parseInt(signature.slice(130, 132), 16)
+  const parsed = parseSignature(signature)
 
   return {
     from,
@@ -254,9 +239,8 @@ export async function createVaultAuthorization(
     validAfter,
     validBefore,
     nonce,
-    signature,
-    v,
-    r,
-    s,
+    v: parsed.v !== undefined ? Number(parsed.v) : parsed.yParity + 27,
+    r: parsed.r,
+    s: parsed.s,
   }
 }

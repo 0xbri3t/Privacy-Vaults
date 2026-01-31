@@ -3,11 +3,24 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../MerkleTreeWithHistory.sol";
 import "../interfaces/IVerifier.sol";
+
+interface IERC3009 {
+    function transferWithAuthorization(
+        address from,
+        address to,
+        uint256 value,
+        uint256 validAfter,
+        uint256 validBefore,
+        bytes32 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external;
+}
 
 contract PrivacyVault is MerkleTreeWithHistory, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -59,23 +72,6 @@ contract PrivacyVault is MerkleTreeWithHistory, ReentrancyGuard {
     }
 
     /**
-     * @notice Deposit funds into the vault
-     * @dev Creates a new leaf in the Merkle tree with the commitment hash
-     * @param _commitment The secret commitment hash
-     */
-    function deposit(bytes32 _commitment) external nonReentrant {
-        if (_commitment == bytes32(0)) revert InvalidCommitment();
-        if (commitments[_commitment]) revert InvalidCommitment();
-
-        uint32 insertedIndex = _insert(_commitment);
-        commitments[_commitment] = true;
-
-        token.safeTransferFrom(msg.sender, address(this), denomination);
-
-        emit Deposit(_commitment, insertedIndex, block.timestamp);
-    }
-
-    /**
      * @notice Deposit funds using EIP-3009 TransferWithAuthorization (gasless)
      * @dev Verifies EIP-3009 signature and executes transfer atomically
      * @param _commitment The secret commitment hash
@@ -100,22 +96,21 @@ contract PrivacyVault is MerkleTreeWithHistory, ReentrancyGuard {
         if (_commitment == bytes32(0)) revert InvalidCommitment();
         if (commitments[_commitment]) revert InvalidCommitment();
 
-        // Call permit to authorize transfer (handles EIP-3009 signature verification)
-        IERC20Permit(address(token)).permit(
+        uint32 insertedIndex = _insert(_commitment);
+        commitments[_commitment] = true;
+
+        // EIP-3009: single call verifies signature AND transfers tokens
+        IERC3009(address(token)).transferWithAuthorization(
             _from,
             address(this),
             denomination,
+            _validAfter,
             _validBefore,
+            _nonce,
             _v,
             _r,
             _s
         );
-
-        uint32 insertedIndex = _insert(_commitment);
-        commitments[_commitment] = true;
-
-        // Transfer the tokens from the user
-        token.safeTransferFrom(_from, address(this), denomination);
 
         emit Deposit(_commitment, insertedIndex, block.timestamp);
     }

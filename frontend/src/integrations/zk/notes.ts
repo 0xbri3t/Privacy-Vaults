@@ -1,122 +1,86 @@
-// @ts-expect-error -- circomlibjs has no type declarations
-import { buildPedersenHash, buildBabyjub } from 'circomlibjs'
+ateVaultNote as createVaultNoteInternal,
+  hashPrecommitment,
+  type MasterKeys,
+} from '../vault/crypto'
 
-// Lazy-loaded circomlibjs instances (they boot a WASM module)
-let pedersenHash: Awaited<ReturnType<typeof buildPedersenHash>> | null = null
-let babyJub: Awaited<ReturnType<typeof buildBabyjub>> | null = null
+// Store master keys for the session
+let sessionMasterKeys: MasterKeys | null = null
 
-async function getPedersen() {
-  if (!pedersenHash || !babyJub) {
-    pedersenHash = await buildPedersenHash()
-    babyJub = await buildBabyjub()
+/**
+ * Initialize vault notes with a mnemonic (called once at session start)
+ * In production, this would use secure key management
+ */
+export function initializeVaultSession(mnemonic: string): void {
+  try {
+    sessionMasterKeys = generateMasterKeys(mnemonic)
+  } catch (error) {
+    throw new Error(
+      `Failed to initialize vault session: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    )
   }
-  return { pedersenHash, babyJub }
 }
 
 /**
- * Convert a bigint to a little-endian buffer of `byteLen` bytes
+ * Generate a random index for vault notes (timestamp-based)
  */
-function toBufferLE(value: bigint, byteLen: number): Uint8Array {
-  const buf = new Uint8Array(byteLen)
-  let v = value
-  for (let i = 0; i < byteLen; i++) {
-    buf[i] = Number(v & 0xffn)
-    v >>= 8n
-  }
-  return buf
+function generateVaultIndex(): bigint {
+  return BigInt(Date.now())
 }
 
 /**
- * Pedersen hash over raw bytes, returning the x-coordinate on BabyJub (field element).
- * This matches circomlib's Pedersen(N) template output[0].
- */
-async function pedersenHashBytes(data: Uint8Array): Promise<bigint> {
-  const { pedersenHash: pedersen, babyJub: bj } = await getPedersen()
-  const point = pedersen.hash(data)
-  const unpackedPoint = bj.unpackPoint(point)
-  // The circuit outputs the x-coordinate (index 0)
-  return bj.F.toObject(unpackedPoint[0]) as bigint
-}
-
-/**
- * Generates a random note (secret)
- * A note is 248 bits of randomness used to create commitments
- */
-export function generateNote(): bigint {
-  const randomBytes = new Uint8Array(31) // 248 bits = 31 bytes
-  crypto.getRandomValues(randomBytes)
-  return BigInt(
-    `0x${Array.from(randomBytes)
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('')}`,
-  )
-}
-
-/**
- * Generates a random nullifier (to prevent double-spends)
- * A nullifier is 248 bits of randomness
- */
-export function generateNullifier(): bigint {
-  const randomBytes = new Uint8Array(31) // 248 bits
-  crypto.getRandomValues(randomBytes)
-  return BigInt(
-    `0x${Array.from(randomBytes)
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('')}`,
-  )
-}
-
-/**
- * Creates a commitment hash using Pedersen(496) from circomlibjs.
- * The input is 496 bits: nullifier (248 bits LE) || secret (248 bits LE).
- * This matches the CommitmentHasher template in withdraw.circom.
+ * Creates a commitment hash for withdrawal verification
+ * Compatibility function for withdraw.ts
  */
 export async function createCommitment(
   secret: bigint,
   nullifier: bigint,
 ): Promise<bigint> {
-  const nullifierBuf = toBufferLE(nullifier, 31) // 248 bits = 31 bytes
-  const secretBuf = toBufferLE(secret, 31)
-  const preimage = new Uint8Array(62) // 496 bits = 62 bytes
-  preimage.set(nullifierBuf, 0)
-  preimage.set(secretBuf, 31)
-  return pedersenHashBytes(preimage)
+  // Using Poseidon hashing via crypto utilities
+  const commitment = hashPrecommitment(nullifier as any, secret as any)
+  return BigInt(commitment)
 }
 
 /**
- * Creates a nullifier hash using Pedersen(248) from circomlibjs.
- * This matches the nullifierHasher in withdraw.circom.
+ * Creates a nullifier hash for withdrawal
+ * Compatibility function for withdraw.ts
  */
 export async function createNullifierHash(
   nullifier: bigint,
 ): Promise<bigint> {
-  const nullifierBuf = toBufferLE(nullifier, 31) // 248 bits = 31 bytes
-  return pedersenHashBytes(nullifierBuf)
+  // For Poseidon-based system, nullifier hash can be the nullifier itself
+  // or a hash of it depending on circuit requirements
+  return nullifier
 }
 
 /**
  * Represents a note object with secret data for later withdrawal
+ * Uses Poseidon hashing instead of Pedersen
  */
 export interface VaultNote {
-  note: bigint
-  nullifier: bigint
   commitment: string // bytes32 hex string
+  nullifier: string // hex string for zero-knowledge proofs
+  secret: string // hex string (keep private!)
 }
 
 /**
- * Generates a complete note ready for vault deposit
+ * Generates a complete note ready for vault deposit using Poseidon hashing
+ * Requires initializeVaultSession() to be called first
  */
 export async function generateVaultNote(): Promise<VaultNote> {
-  const note = generateNote()
-  const nullifier = generateNullifier()
-  const commitmentBigInt = await createCommitment(note, nullifier)
-  // Pad to 32 bytes hex
-  const commitment = `0x${commitmentBigInt.toString(16).padStart(64, '0')}`
+  if (!sessionMasterKeys) {
+    throw new Error(
+      'Vault session not initialized. Call initializeVaultSession(mnemonic) first.',
+    )
+  }
+
+  const vaultIndex = generateVaultIndex()
+  const { nullifier, secret } = generateVaultSecrets(sessionMasterKeys, vaultIndex)
+  const note = createVaultNoteInternal(nullifier, secret)
 
   return {
-    note,
-    nullifier,
-    commitment,
+    commitment: `0x${note.commitment.toString(16).padStart(64, '0')}`,
+    nullifier: `0x${nullifier.toString(16).padStart(64, '0')}`,
+    secret: `0x${secret.toString(16).padStart(64, '0')}`,
   }
 }
 

@@ -1,0 +1,14 @@
+{
+  "contracts/lib/openzeppelin-contracts": {
+    "rev": "fcbae5394ae8ad52d8e580a3477db99814b9d565"
+  },
+  "contracts/lib/poseidon2-evm": {
+    "rev": "4c52b46d82659df6d11d67b251b6aea63c8b4203"
+  },
+  "lib/poseidon2-evm": {
+    "tag": {
+      "name": "v1.0.0",
+      "rev": "4c52b46d82659df6d11d67b251b6aea63c8b4203"
+    }
+  }
+}

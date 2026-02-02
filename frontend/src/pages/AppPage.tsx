@@ -22,7 +22,7 @@ import {
 import { getUSDCBalance, type SupportedNetwork } from '../integrations/x402'
 import { createVaultAuthorization } from '../integrations/x402/payments'
 import { getVaultConfig } from '../integrations/vault/config'
-import { generateVaultNote, type VaultNote } from '../integrations/zk/notes'
+import { generateVaultNote, initializeVaultSession, type VaultNote } from '../integrations/zk/notes'
 import { withdraw as executeWithdraw, type WithdrawStep } from '../integrations/zk/withdraw'
 
 type Tab = 'deposit' | 'withdraw'
@@ -271,9 +271,7 @@ const STEP_LABELS: Record<WithdrawStep, string> = {
 function WithdrawTab({
   isAuthenticated,
   address,
-  publicClient,
-  vaultAddress,
-  deployBlock,
+  public  deployBlock,
 }: {
   isAuthenticated: boolean
   address: string | undefined
@@ -702,6 +700,42 @@ export function AppPage() {
                 publicClient={publicClient as PublicClient}
                 vaultAddress={getVaultConfig(paymentChain.id).vaultAddress}
                 deployBlock={getVaultConfig(paymentChain.id).deployBlock}
+ow-hidden"
+        >
+          <div className="flex">
+            {(['deposit', 'withdraw'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`flex-1 py-3.5 text-sm font-semibold transition-all ${tab === t
+                  ? 'bg-linear-to-r from-violet-500 to-cyan-400 text-white'
+                  : 'bg-white/5 text-zinc-500 hover:text-zinc-300 hover:bg-white/10'
+                  }`}
+              >
+                {t === 'deposit' ? 'Deposit' : 'Withdraw'}
+              </button>
+            ))}
+          </div>
+
+          <div className="min-h-[370px] p-8">
+            {tab === 'deposit' ? (
+              <DepositTab
+                isAuthenticated={isAuthenticated}
+                address={address}
+                balance={Number(formattedUsdcBalance)}
+                isCorrectChain={isCorrectChain}
+                isWorking={isWorking}
+                depositError={depositError}
+                onSubmitPayment={handlePayment}
+                onSwitchChain={() => switchChain({ chainId: paymentChain.id })}
+              />
+            ) : (
+              <WithdrawTab
+                isAuthenticated={isAuthenticated}
+                address={address}
+                publicClient={publicClient as PublicClient}
+                vaultAddress={getVaultConfig(paymentChain.id).vaultAddress}
+                deployBlock={getVaultConfig(paymentChain.id).deployBlock}
               />
             )}
           </div>
@@ -713,6 +747,55 @@ export function AppPage() {
           isOpen={true}
           onClose={() => setRevealedNote(null)}
         />
+      )}
+
+      {/* Mnemonic initialization modal */}
+      {showMnemonicModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-card rounded-2xl p-8 w-full max-w-md"
+          >
+            <h2 className="text-2xl font-bold mb-4">Vault Initialization</h2>
+            <p className="text-zinc-300 mb-6">
+              Enter your BIP39 mnemonic to initialize the vault session. This will be stored in sessionStorage for this session only.
+            </p>
+
+            <textarea
+              value={mnemonicInput}
+              onChange={(e) => {
+                setMnemonicInput(e.target.value)
+                setMnemonicError(null)
+              }}
+              placeholder="abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+              className="w-full h-24 p-3 rounded-lg bg-white/10 text-white placeholder-zinc-500 border border-white/20 mb-4 resize-none focus:outline-none focus:border-white/40"
+            />
+
+            {mnemonicError && (
+              <p className="text-red-400 text-sm mb-4">{mnemonicError}</p>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleMnemonicSubmit}
+                disabled={!mnemonicInput.trim()}
+                className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 text-white font-semibold hover:opacity-90 disabled:opacity-50 transition"
+              >
+                Initialize
+              </button>
+              <button
+                onClick={() => {
+                  setShowMnemonicModal(false)
+                  setMnemonicInput('')
+                }}
+                className="flex-1 px-4 py-2 rounded-lg bg-white/10 text-white font-semibold hover:bg-white/20 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   )

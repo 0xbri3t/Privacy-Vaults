@@ -1,4 +1,3 @@
-// @ts-expect-error -- circomlibjs has no type declarations
 import { buildMimcSponge } from 'circomlibjs'
 import { type Address, type PublicClient, parseAbiItem } from 'viem'
 

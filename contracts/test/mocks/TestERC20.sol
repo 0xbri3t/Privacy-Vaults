@@ -9,22 +9,18 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  * @notice Mock USDC with EIP-3009 transfer/receiveWithAuthorization for testing
  */
 contract MockUSDC is ERC20, EIP712 {
-    bytes32 public constant TRANSFER_WITH_AUTHORIZATION_TYPEHASH =
-        keccak256(
-            "TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
-        );
-    bytes32 public constant RECEIVE_WITH_AUTHORIZATION_TYPEHASH =
-        keccak256(
-            "ReceiveWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
-        );
+    bytes32 public constant TRANSFER_WITH_AUTHORIZATION_TYPEHASH = keccak256(
+        "TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
+    );
+    bytes32 public constant RECEIVE_WITH_AUTHORIZATION_TYPEHASH = keccak256(
+        "ReceiveWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
+    );
 
     mapping(address => mapping(bytes32 => bool)) public authorizationState;
 
     event AuthorizationUsed(address indexed authorizer, bytes32 indexed nonce);
 
-    constructor(
-        uint256 initialSupply
-    ) ERC20("USD Coin", "USDC") EIP712("USD Coin", "2") {
+    constructor(uint256 initialSupply) ERC20("USD Coin", "USDC") EIP712("USD Coin", "2") {
         _mint(msg.sender, initialSupply);
     }
 
@@ -52,15 +48,7 @@ contract MockUSDC is ERC20, EIP712 {
         require(!authorizationState[from][nonce], "Authorization already used");
 
         bytes32 structHash = keccak256(
-            abi.encode(
-                TRANSFER_WITH_AUTHORIZATION_TYPEHASH,
-                from,
-                to,
-                value,
-                validAfter,
-                validBefore,
-                nonce
-            )
+            abi.encode(TRANSFER_WITH_AUTHORIZATION_TYPEHASH, from, to, value, validAfter, validBefore, nonce)
         );
 
         bytes32 digest = _hashTypedDataV4(structHash);
@@ -89,17 +77,8 @@ contract MockUSDC is ERC20, EIP712 {
         require(block.timestamp < validBefore, "Authorization expired");
         require(!authorizationState[from][nonce], "Authorization already used");
 
-        bytes32 structHash = keccak256(
-            abi.encode(
-                RECEIVE_WITH_AUTHORIZATION_TYPEHASH,
-                from,
-                to,
-                value,
-                validAfter,
-                validBefore,
-                nonce
-            )
-        );
+        bytes32 structHash =
+            keccak256(abi.encode(RECEIVE_WITH_AUTHORIZATION_TYPEHASH, from, to, value, validAfter, validBefore, nonce));
 
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, v, r, s);

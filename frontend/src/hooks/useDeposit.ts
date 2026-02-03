@@ -7,7 +7,6 @@ import {
   RECEIVE_WITH_AUTHORIZATION_TYPES,
   USDC_DOMAIN,
 } from '../contracts/abis.ts'
-import { VAULT_ADDRESS, DENOMINATION } from '../contracts/addresses.ts'
 
 const RELAYER_URL = import.meta.env.VITE_RELAYER_URL || 'http://localhost:3007'
 
@@ -27,11 +26,13 @@ interface DepositState {
 }
 
 interface useDepositProps {
-  address?: `0x${string}`,
+  address?: `0x${string}`
   isConnected?: boolean
+  vaultAddress: `0x${string}`
+  denomination: bigint
 }
 
-export function useDeposit({ address, isConnected }: useDepositProps) {
+export function useDeposit({ address, isConnected, vaultAddress, denomination }: useDepositProps) {
   const [state, setState] = useState<DepositState>({
     step: 'idle',
     note: null,
@@ -55,7 +56,7 @@ export function useDeposit({ address, isConnected }: useDepositProps) {
       // Step 2: Sign EIP-3009 ReceiveWithAuthorization (off-chain, gasless)
       setState((s) => ({ ...s, step: 'signing' }))
       const from = address as `0x${string}`
-      const to = VAULT_ADDRESS
+      const to = vaultAddress
       const nowSeconds = Math.floor(Date.now() / 1000)
       const validAfter = 0n
       const validBefore = BigInt(nowSeconds + 3600)
@@ -70,7 +71,7 @@ export function useDeposit({ address, isConnected }: useDepositProps) {
         message: {
           from: getAddress(from),
           to: getAddress(to),
-          value: DENOMINATION,
+          value: denomination,
           validAfter,
           validBefore,
           nonce,
@@ -91,7 +92,7 @@ export function useDeposit({ address, isConnected }: useDepositProps) {
         [
           getAddress(from),
           getAddress(to),
-          DENOMINATION,
+          denomination,
           validAfter,
           validBefore,
           nonce,
@@ -124,7 +125,7 @@ export function useDeposit({ address, isConnected }: useDepositProps) {
       const message = err instanceof Error ? err.message : 'Unknown error'
       setState((s) => ({ ...s, step: 'error', error: message }))
     }
-  }, [signTypedDataAsync, isConnected, address])
+  }, [signTypedDataAsync, isConnected, address, vaultAddress, denomination])
 
   const reset = useCallback(() => {
     setState({ step: 'idle', note: null, txHash: null, error: null })

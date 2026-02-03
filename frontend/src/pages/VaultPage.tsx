@@ -9,6 +9,7 @@ import { useUser, useWallets, type UserWallet, OpenfortButton } from "@openfort/
 import { useAccount, useSwitchChain } from "wagmi";
 import { createPublicClient, http } from "viem";
 import { baseSepolia } from "viem/chains";
+import { DEFAULT_VAULT, type VaultConfig } from '../contracts/addresses.ts'
 
 
 type Tab = 'deposit' | 'withdraw'
@@ -20,6 +21,7 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
     const { wallets, isLoadingWallets, setActiveWallet, isConnecting } = useWallets();
 
     const [tab, setTab] = useState<Tab>('deposit')
+    const [selectedVault, setSelectedVault] = useState<VaultConfig>(DEFAULT_VAULT)
 
     const publicClient = useMemo(
         () =>
@@ -99,7 +101,10 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
 
                     {/* Content */}
                     <div className="p-6">
-                        {tab === 'deposit' ? <DepositTab publicClient={publicClient} isConnected={isConnected} address={address} /> : <WithdrawTab />}
+                        {tab === 'deposit'
+                            ? <DepositTab publicClient={publicClient} isConnected={isConnected} address={address} selectedVault={selectedVault} onVaultChange={setSelectedVault} />
+                            : <WithdrawTab selectedVault={selectedVault} />
+                        }
                     </div>
                 </div>
             </div>

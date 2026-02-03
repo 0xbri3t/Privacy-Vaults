@@ -3,6 +3,7 @@ import { useAccount } from 'wagmi'
 import { OpenfortButton } from '@openfort/react'
 import { useWithdraw } from '../hooks/useWithdraw.ts'
 import { StatusIndicator } from './StatusIndicator.tsx'
+import type { VaultConfig } from '../contracts/addresses.ts'
 
 const WITHDRAW_STEPS = [
   { key: 'fetching-events', label: 'Fetching deposit events' },
@@ -11,7 +12,7 @@ const WITHDRAW_STEPS = [
   { key: 'submitting', label: 'Submitting transaction' },
 ]
 
-export function WithdrawTab() {
+export function WithdrawTab({ selectedVault }: { selectedVault: VaultConfig }) {
   const [noteInput, setNoteInput] = useState('')
   const [recipient, setRecipient] = useState('')
   const { address, isConnected } = useAccount()
@@ -39,8 +40,8 @@ export function WithdrawTab() {
   return (
     <div className="space-y-5">
       <p className="text-zinc-400 text-sm leading-relaxed">
-        Paste your withdrawal note and specify the recipient address to withdraw
-        1 USDC from the vault.
+        Paste your withdrawal note and specify the recipient address to
+        withdraw {selectedVault.label} from the vault.
       </p>
 
       <div className="space-y-2">
@@ -98,7 +99,7 @@ export function WithdrawTab() {
           disabled={isActive || !noteInput.trim() || !recipient.trim()}
           className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 text-white font-semibold hover:shadow-lg hover:shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
-          {isActive ? 'Processing...' : 'Withdraw 1 USDC'}
+          {isActive ? 'Processing...' : `Withdraw ${selectedVault.label}`}
         </button>
       ) : (
         <div className="space-y-2">

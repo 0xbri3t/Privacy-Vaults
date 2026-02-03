@@ -1,10 +1,11 @@
+import { useState } from 'react'
 import { OpenfortButton } from "@openfort/react";
 import { useDeposit } from '../hooks/useDeposit.ts'
 import { useUsdcBalance } from '../hooks/useUsdcBalance.ts'
 import { StatusIndicator } from './StatusIndicator.tsx'
 import { NoteModal } from './NoteModal.tsx'
-
-
+import { InsufficientBalanceModal } from './InsufficientBalanceModal.tsx'
+import { VAULTS, type VaultConfig } from '../contracts/addresses.ts'
 
 const DEPOSIT_STEPS = [
   { key: 'generating', label: 'Generating commitment' },
@@ -13,26 +14,68 @@ const DEPOSIT_STEPS = [
 ]
 
 interface DepositTabProps {
-  publicClient: any;
-  isConnected: boolean;
-  address: `0x${string}` | undefined;
+  publicClient: any
+  isConnected: boolean
+  address: `0x${string}` | undefined
+  selectedVault: VaultConfig
+  onVaultChange: (v: VaultConfig) => void
 }
 
-export function DepositTab({ publicClient, isConnected, address }: DepositTabProps) {
-  
-  const { step, note, txHash, error, deposit, reset } = useDeposit({ address, isConnected })
+export function DepositTab({ publicClient, isConnected, address, selectedVault, onVaultChange }: DepositTabProps) {
+  const [showInsufficientModal, setShowInsufficientModal] = useState(false)
+
+  const { step, note, txHash, error, deposit, reset } = useDeposit({
+    address,
+    isConnected,
+    vaultAddress: selectedVault.address,
+    denomination: selectedVault.denomination,
+  })
   const isActive = step !== 'idle' && step !== 'done' && step !== 'error'
 
+  const { formattedBalance, isRefreshingBalance, refreshBalance } = useUsdcBalance(publicClient, address as `0x${string}`)
 
-  const { formattedBalance , isRefreshingBalance, refreshBalance } = useUsdcBalance(publicClient, address as `0x${string}`)
-
+  const handleDeposit = () => {
+    const balance = parseFloat(formattedBalance || '0')
+    if (balance < selectedVault.displayAmount) {
+      setShowInsufficientModal(true)
+      return
+    }
+    deposit()
+  }
 
   return (
     <div className="space-y-5">
       <p className="text-zinc-400 text-sm leading-relaxed">
-        Deposit 1 USDC into the Privacy Vault. You will receive a secret note
-        that can be used to withdraw later.
+        Deposit <span className="text-white font-medium">{selectedVault.label}</span> into the Privacy Vault.
+        You will receive a secret note that can be used to withdraw later.
       </p>
+
+      {/* Denomination selector */}
+      <div className="flex gap-2">
+        {VAULTS.map((vault) => {
+          const isSelected = vault.denomination === selectedVault.denomination
+          const isDisabled = !vault.enabled
+          return (
+            <button
+              key={vault.label}
+              onClick={() => !isDisabled && onVaultChange(vault)}
+              disabled={isDisabled || isActive}
+              className={`
+                flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all border
+                ${isSelected
+                  ? 'bg-gradient-to-r from-violet-500/20 to-cyan-400/20 border-violet-500/50 text-white shadow-sm shadow-violet-500/10'
+                  : isDisabled
+                    ? 'bg-zinc-800/30 border-zinc-800 text-zinc-600 cursor-not-allowed'
+                    : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
+                }
+              `}
+            >
+              {vault.displayAmount}
+              {isDisabled && <span className="block text-[10px] font-normal text-zinc-600">Soon</span>}
+            </button>
+          )
+        })}
+      </div>
 
       {/* Token info */}
       <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
@@ -42,7 +85,7 @@ export function DepositTab({ publicClient, isConnected, address }: DepositTabPro
           </div>
           <div>
             <p className="text-sm font-medium text-white">USDC</p>
-            <p className="text-xs text-zinc-500">1.00 USDC</p>
+            <p className="text-xs text-zinc-500">{selectedVault.label}</p>
           </div>
         </div>
         {isConnected && formattedBalance !== null && (
@@ -55,11 +98,11 @@ export function DepositTab({ publicClient, isConnected, address }: DepositTabPro
       {/* Action button */}
       {isConnected ? (
         <button
-          onClick={deposit}
+          onClick={handleDeposit}
           disabled={isActive}
           className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 text-white font-semibold hover:shadow-lg hover:shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
-          {isActive ? 'Processing...' : 'Deposit 1 USDC'}
+          {isActive ? 'Processing...' : `Deposit ${selectedVault.label}`}
         </button>
       ) : (
         <div className="space-y-2">
@@ -103,6 +146,15 @@ export function DepositTab({ publicClient, isConnected, address }: DepositTabPro
 
       {/* Note modal */}
       {step === 'done' && note && <NoteModal note={note} onClose={reset} />}
+
+      {/* Insufficient balance modal */}
+      {showInsufficientModal && (
+        <InsufficientBalanceModal
+          requiredAmount={selectedVault.label}
+          currentBalance={formattedBalance || '0'}
+          onClose={() => setShowInsufficientModal(false)}
+        />
+      )}
     </div>
   )
 }

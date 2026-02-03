@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react'
-import { useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo } from 'react'
 
 import { AnimatedBackground } from '../components/AnimatedBackground.tsx'
 import { WithdrawTab } from '../components/WithdrawTab.tsx'
 import { DepositTab } from '../components/DepositTab.tsx'
 
-import { useUser, useWallets, type UserWallet, OpenfortButton } from "@openfort/react";
+import { useUser, useWallets, OpenfortButton } from "@openfort/react";
 import { useAccount, useSwitchChain } from "wagmi";
 import { createPublicClient, http } from "viem";
 import { baseSepolia } from "viem/chains";
@@ -46,9 +45,6 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
             switchChainAsync({ chainId: baseSepolia.id }).catch(() => {})
         }
     }, [isConnected, chainId, switchChainAsync])
-
-    const showWalletSelector =
-        isAuthenticated && !isLoadingWallets && !isConnected && !isConnecting && wallets.length > 1
 
     return (
         <div className="relative min-h-screen bg-zinc-950">

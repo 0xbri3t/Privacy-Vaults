@@ -32,7 +32,7 @@ export function DepositTab({ publicClient, isConnected, address, selectedVault, 
   })
   const isActive = step !== 'idle' && step !== 'done' && step !== 'error'
 
-  const { formattedBalance, isRefreshingBalance, refreshBalance } = useUsdcBalance(publicClient, address as `0x${string}`)
+  const { formattedBalance } = useUsdcBalance(publicClient, address as `0x${string}`)
 
   const handleDeposit = () => {
     const balance = parseFloat(formattedBalance || '0')

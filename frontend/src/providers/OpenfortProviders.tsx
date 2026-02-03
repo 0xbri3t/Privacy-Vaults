@@ -40,7 +40,7 @@ export function OpenfortProviders({ children }: { children: React.ReactNode }) {
               AuthProvider.WALLET,
             ],
             walletRecovery: {
-              defaultMethod: RecoveryMethod.AUTOMATIC,
+              defaultMethod: RecoveryMethod.PASSKEY,
             },
           }}
         >

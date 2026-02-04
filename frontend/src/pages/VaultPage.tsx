@@ -73,7 +73,7 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
             <div className="relative z-10 w-full px-6 pt-5 pb-4 flex items-center justify-between">
                 <button
                     onClick={onBack}
-                    className="text-lg font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent hover:opacity-80 transition-opacity"
+                    className="text-lg font-bold text-amber-500 hover:opacity-80 transition-opacity"
                 >
                     Privacy Vault
                 </button>
@@ -104,7 +104,7 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
             {isAuthenticated && (isLoadingWallets || isConnecting) && (
                 <div className="relative z-10 max-w-lg mx-auto px-4 pb-4">
                     <div className="glass-card rounded-xl p-4 flex items-center gap-3">
-                        <span className="inline-block w-4 h-4 rounded-full border-2 border-violet-400 border-t-transparent animate-spin" />
+                        <span className="inline-block w-4 h-4 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
                         <p className="text-sm text-[var(--text-secondary)]">Setting up your wallet...</p>
                     </div>
                 </div>
@@ -114,7 +114,7 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
             {/* Main content — two-card layout */}
             <div className="relative z-10 max-w-6xl mx-auto px-4 pb-8 flex flex-col lg:flex-row gap-6">
                 <div className="w-full lg:w-1/2 min-h-[344px]">
-                    <div className="glass-card rounded-2xl shadow-xl shadow-violet-500/5 h-full flex flex-col">
+                    <div className="glass-card rounded-2xl shadow-xl shadow-amber-500/5 h-full flex flex-col">
                         {/* Tabs */}
                         <div className="flex overflow-hidden rounded-t-2xl">
                             {(['deposit', 'withdraw'] as const).map((t) => (
@@ -128,7 +128,7 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
                                 >
                                     {t.charAt(0).toUpperCase() + t.slice(1)}
                                     {tab === t && (
-                                        <span className="absolute bottom-0 inset-x-4 h-0.5 bg-gradient-to-r from-violet-500 to-cyan-400 rounded-full" />
+                                        <span className="absolute bottom-0 inset-x-4 h-0.5 bg-amber-500 rounded-full" />
                                     )}
                                 </button>
                             ))}

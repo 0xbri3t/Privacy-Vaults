@@ -29,7 +29,7 @@ export function FlipWords({ words, duration = 3000, className }: FlipWordsProps)
           animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           exit={{ opacity: 0, y: -10, filter: 'blur(8px)' }}
           transition={{ duration: 0.4, ease: 'easeInOut' }}
-          className="inline-block bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent"
+          className="inline-block text-amber-500"
         >
           {words[index]}
         </motion.span>

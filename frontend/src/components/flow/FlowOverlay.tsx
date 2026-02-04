@@ -41,13 +41,13 @@ export function FlowOverlay({ activeStep, onLaunch }: FlowOverlayProps) {
           transition={{ duration: 0.4, ease: 'easeOut' }}
           className="text-center max-w-lg mx-auto"
         >
-          <p className="text-xs font-medium tracking-widest uppercase text-violet-400 mb-3">
+          <p className="text-xs font-medium tracking-widest uppercase text-amber-500 mb-3">
             Step {activeStep + 1} of 5
           </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] mb-4">
             {stages[activeStep].title}
           </h2>
-          <p className="text-zinc-400 text-base sm:text-lg leading-relaxed">
+          <p className="text-[var(--text-tertiary)] text-base sm:text-lg leading-relaxed">
             {stages[activeStep].description}
           </p>
         </motion.div>
@@ -64,7 +64,7 @@ export function FlowOverlay({ activeStep, onLaunch }: FlowOverlayProps) {
           >
             <button
               onClick={onLaunch}
-              className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 text-white font-semibold text-lg hover:shadow-xl hover:shadow-violet-500/25 transition-all"
+              className="px-8 py-3.5 rounded-xl bg-amber-500 text-white font-semibold text-lg hover:bg-amber-400 hover:shadow-xl hover:shadow-amber-500/25 transition-all"
             >
               Launch App
             </button>

@@ -115,7 +115,7 @@ function ToggleRow({
         onClick={onChange}
         disabled={disabled}
         className={`relative w-10 h-5.5 rounded-full transition-colors ${
-          checked ? 'bg-violet-500' : 'bg-[var(--bg-hover)]'
+          checked ? 'bg-amber-500' : 'bg-[var(--bg-hover)]'
         } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
         style={{ height: '22px' }}
       >

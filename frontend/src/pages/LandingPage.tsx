@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { AnimatedBackground } from '../components/AnimatedBackground.tsx'
+import { Plasma } from '../components/Plasma.tsx'
 import { Spotlight } from '../components/Spotlight.tsx'
 import { FlipWords } from '../components/FlipWords.tsx'
 import { FlowVisualization } from '../components/flow/FlowVisualization.tsx'
@@ -20,17 +20,20 @@ const fadeUp = {
 export function LandingPage({ onLaunch }: LandingPageProps) {
   return (
     <div className="relative min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] overflow-hidden">
-      <AnimatedBackground />
+      {/* Plasma WebGL background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <Plasma color="#f59e0b" speed={0.3} scale={1.2} opacity={0.15} mouseInteractive={false} />
+      </div>
 
       {/* Navbar */}
       <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl border-b border-[var(--border-subtle)]" style={{ backgroundColor: 'color-mix(in srgb, var(--bg-page) 60%, transparent)' }}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="text-lg font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
+          <span className="text-lg font-bold text-amber-500">
             Privacy Vault
           </span>
           <button
             onClick={onLaunch}
-            className="px-5 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-cyan-400 text-white text-sm font-medium hover:shadow-lg hover:shadow-violet-500/25 transition-shadow"
+            className="px-5 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/25 transition-all"
           >
             Launch App
           </button>
@@ -38,7 +41,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
       </nav>
 
       {/* Hero */}
-      <Spotlight className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 pt-16" fill="rgba(139,92,246,0.3)">
+      <Spotlight className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 pt-16" fill="rgba(245,158,11,0.2)">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -57,7 +60,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
           <div className="mt-10 flex items-center justify-center gap-4">
             <button
               onClick={onLaunch}
-              className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 text-white font-semibold text-lg hover:shadow-xl hover:shadow-violet-500/25 transition-all"
+              className="px-8 py-3.5 rounded-xl bg-amber-500 text-white font-semibold text-lg hover:bg-amber-400 hover:shadow-xl hover:shadow-amber-500/25 transition-all"
             >
               Launch App
             </button>

@@ -70,7 +70,7 @@ export function DepositTab({ publicClient, isConnected, address, selectedVault, 
                 href="https://faucet.circle.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-violet-400 hover:text-violet-300 transition-colors"
+                className="text-amber-500 hover:text-amber-400 transition-colors"
               >
                 Get testnet USDC
               </a>
@@ -91,7 +91,7 @@ export function DepositTab({ publicClient, isConnected, address, selectedVault, 
                 className={`
                   flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all border
                   ${isSelected
-                    ? 'bg-gradient-to-r from-violet-500/20 to-cyan-400/20 border-violet-500/50 text-[var(--text-primary)] shadow-sm shadow-violet-500/10'
+                    ? 'bg-amber-500/15 border-amber-500/50 text-[var(--text-primary)] shadow-sm shadow-amber-500/10'
                     : isDisabled
                       ? 'bg-[var(--bg-surface)] border-[var(--border-primary)] text-[var(--text-muted)] cursor-not-allowed'
                       : 'bg-[var(--bg-surface)] border-[var(--border-primary)] text-[var(--text-tertiary)] hover:border-[var(--text-muted)] hover:text-[var(--text-secondary)]'
@@ -123,7 +123,7 @@ export function DepositTab({ publicClient, isConnected, address, selectedVault, 
           <button
             onClick={handleDeposit}
             disabled={isActive}
-            className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 text-white font-semibold hover:shadow-lg hover:shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full py-3.5 px-4 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Deposit {selectedVault.label}
           </button>
@@ -160,7 +160,7 @@ export function DepositTab({ publicClient, isConnected, address, selectedVault, 
               href={`${networkConfig.explorerBaseUrl}/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-violet-400 hover:underline"
+              className="text-amber-500 hover:underline"
             >
               {txHash.slice(0, 10)}...{txHash.slice(-8)}
             </a>

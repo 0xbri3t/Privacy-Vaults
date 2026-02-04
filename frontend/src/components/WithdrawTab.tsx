@@ -131,10 +131,10 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
             onChange={(e) => setNoteInput(e.target.value)}
             placeholder="0x..."
             disabled={isActive}
-            className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-primary)] rounded-lg text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-violet-500/60 transition-colors"
+            className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-primary)] rounded-lg text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-amber-500/60 transition-colors"
           />
           <label className="block">
-            <span className="text-[11px] text-[var(--text-muted)] cursor-pointer hover:text-violet-400 transition-colors">
+            <span className="text-[11px] text-[var(--text-muted)] cursor-pointer hover:text-amber-500 transition-colors">
               Or upload a .txt file
             </span>
             <input
@@ -155,7 +155,7 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
               onChange={(e) => setRecipient(e.target.value)}
               placeholder="0x... or name.eth"
               disabled={isActive}
-              className="flex-1 px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-primary)] rounded-lg text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-violet-500/60 transition-colors"
+              className="flex-1 px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-primary)] rounded-lg text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-amber-500/60 transition-colors"
             />
             {address && (
               <button
@@ -170,7 +170,7 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
           {/* ENS resolution feedback */}
           {isResolving && (
             <p className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">
-              <span className="inline-block w-2.5 h-2.5 rounded-full border-2 border-violet-400 border-t-transparent animate-spin" />
+              <span className="inline-block w-2.5 h-2.5 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
               Resolving ENS name...
             </p>
           )}
@@ -181,14 +181,14 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
           )}
           {ensName && resolvedAddress && (
             <div className="space-y-1">
-              <p className="text-xs text-violet-400">
+              <p className="text-xs text-amber-500">
                 {ensName} &rarr; <span className="font-mono text-[var(--text-secondary)]">{resolvedAddress.slice(0, 6)}...{resolvedAddress.slice(-4)}</span>
               </p>
               {isLoadingPrefs && (
                 <p className="text-xs text-[var(--text-muted)]">Loading withdrawal preferences...</p>
               )}
               {preferences.chain && (
-                <p className="text-xs text-cyan-400">
+                <p className="text-xs text-amber-400">
                   Preferences loaded: {preferences.chain.shortName}{preferences.token ? ` / ${preferences.token.symbol}` : ''}
                 </p>
               )}
@@ -218,7 +218,7 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
           <button
             onClick={handleWithdraw}
             disabled={isActive || isBridging || !noteInput.trim() || !isRecipientValid}
-            className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 text-white font-semibold hover:shadow-lg hover:shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full py-3.5 px-4 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Withdraw {selectedVault.label}
           </button>
@@ -279,7 +279,7 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
           </div>
           <button
             onClick={() => bridge(quote)}
-            className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold hover:shadow-lg hover:shadow-cyan-500/20 transition-all"
+            className="w-full py-3.5 px-4 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/20 transition-all"
           >
             Bridge to {selectedChain.name}
           </button>

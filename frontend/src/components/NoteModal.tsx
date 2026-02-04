@@ -44,7 +44,7 @@ export function NoteModal({ note, onClose }: NoteModalProps) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="relative bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl shadow-violet-500/10 backdrop-blur-xl"
+          className="relative bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl shadow-amber-500/10 backdrop-blur-xl"
         >
           <h3 className="text-xl font-bold text-[var(--text-primary)]">Deposit Successful</h3>
 
@@ -53,20 +53,20 @@ export function NoteModal({ note, onClose }: NoteModalProps) {
             funds.
           </p>
 
-          <div className="bg-[var(--bg-surface)] border border-[var(--border-primary)] rounded-xl p-4 font-mono text-xs text-violet-300 break-all select-all max-h-32 overflow-y-auto">
+          <div className="bg-[var(--bg-surface)] border border-[var(--border-primary)] rounded-xl p-4 font-mono text-xs text-amber-300 break-all select-all max-h-32 overflow-y-auto">
             {note}
           </div>
 
           <div className="flex gap-3">
             <button
               onClick={handleCopy}
-              className="flex-1 py-2.5 px-4 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 text-violet-300 text-sm font-medium transition-colors"
+              className="flex-1 py-2.5 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-300 text-sm font-medium transition-colors"
             >
               {copied ? 'Copied!' : 'Copy'}
             </button>
             <button
               onClick={handleDownload}
-              className="flex-1 py-2.5 px-4 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-300 text-sm font-medium transition-colors"
+              className="flex-1 py-2.5 px-4 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] text-[var(--text-secondary)] text-sm font-medium transition-colors"
             >
               Download .txt
             </button>
@@ -81,7 +81,7 @@ export function NoteModal({ note, onClose }: NoteModalProps) {
               type="checkbox"
               checked={backedUp}
               onChange={(e) => setBackedUp(e.target.checked)}
-              className="w-4 h-4 rounded border-[var(--border-primary)] bg-[var(--bg-input)] text-violet-500 focus:ring-violet-500/50 accent-violet-500"
+              className="w-4 h-4 rounded border-[var(--border-primary)] bg-[var(--bg-input)] text-amber-500 focus:ring-amber-500/50 accent-amber-500"
             />
             <span className="text-sm text-[var(--text-secondary)]">I have backed up my withdrawal note</span>
           </label>
@@ -89,7 +89,7 @@ export function NoteModal({ note, onClose }: NoteModalProps) {
           <button
             onClick={onClose}
             disabled={!backedUp}
-            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 text-white font-semibold hover:shadow-lg hover:shadow-violet-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            className="w-full py-3 px-4 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             Done
           </button>

@@ -80,10 +80,10 @@ export function FlowVisualization({ onLaunch }: FlowVisualizationProps) {
                     w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
                     transition-all duration-300 border-2
                     ${isActive
-                      ? 'bg-gradient-to-br from-violet-500 to-cyan-400 border-transparent text-white shadow-lg shadow-violet-500/30 scale-110'
+                      ? 'bg-amber-500 border-transparent text-white shadow-lg shadow-amber-500/30 scale-110'
                       : isDone
-                        ? 'bg-violet-500/20 border-violet-500/50 text-violet-300'
-                        : 'bg-zinc-800/60 border-zinc-700 text-zinc-500 group-hover:border-zinc-500 group-hover:text-zinc-300'
+                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                        : 'bg-[var(--bg-surface)] border-[var(--border-primary)] text-[var(--text-muted)] group-hover:border-[var(--text-muted)] group-hover:text-[var(--text-secondary)]'
                     }
                   `}
                 >
@@ -91,7 +91,7 @@ export function FlowVisualization({ onLaunch }: FlowVisualizationProps) {
                 </div>
                 <span
                   className={`text-[10px] font-medium transition-colors duration-300 ${
-                    isActive ? 'text-white' : isDone ? 'text-violet-400' : 'text-zinc-600'
+                    isActive ? 'text-[var(--text-primary)]' : isDone ? 'text-amber-400' : 'text-[var(--text-muted)]'
                   }`}
                 >
                   {label}
@@ -106,16 +106,16 @@ export function FlowVisualization({ onLaunch }: FlowVisualizationProps) {
           <button
             onClick={goPrev}
             disabled={activeStep === 0}
-            className="px-4 py-2 rounded-lg bg-zinc-800/60 border border-zinc-700 text-zinc-400 text-sm font-medium
-              hover:border-zinc-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            className="px-4 py-2 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[var(--text-tertiary)] text-sm font-medium
+              hover:border-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           >
             Prev
           </button>
           <button
             onClick={goNext}
             disabled={activeStep === 4}
-            className="px-4 py-2 rounded-lg bg-zinc-800/60 border border-zinc-700 text-zinc-400 text-sm font-medium
-              hover:border-zinc-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            className="px-4 py-2 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[var(--text-tertiary)] text-sm font-medium
+              hover:border-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           >
             Next
           </button>

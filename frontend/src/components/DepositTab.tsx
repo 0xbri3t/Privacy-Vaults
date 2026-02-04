@@ -7,6 +7,7 @@ import { StatusIndicator } from './StatusIndicator.tsx'
 import { NoteModal } from './NoteModal.tsx'
 import { InsufficientBalanceModal } from './InsufficientBalanceModal.tsx'
 import type { VaultConfig, NetworkConfig } from '../contracts/addresses.ts'
+import { useNetworkMode } from '../contexts/NetworkModeContext.tsx'
 
 const DEPOSIT_STEPS = [
   { key: 'generating', label: 'Generating commitment' },
@@ -35,6 +36,7 @@ export function DepositTab({ publicClient, isConnected, address, selectedVault, 
   })
   const isActive = step !== 'idle' && step !== 'done' && step !== 'error'
 
+  const { isTestnet } = useNetworkMode()
   const { formattedBalance } = useUsdcBalance(publicClient, address as `0x${string}`, networkConfig.usdcAddress)
   const { blendedApy } = useYieldApy(networkConfig.yieldPools)
 
@@ -56,9 +58,21 @@ export function DepositTab({ publicClient, isConnected, address, selectedVault, 
 
       {/* Balance */}
       {isConnected && formattedBalance !== null && (
-        <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-          <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png" alt="USDC" className="w-4 h-4 rounded-full" />
-          Balance: <span className="text-zinc-300">{formattedBalance} USDC</span>
+        <div className="flex items-center justify-between text-xs text-zinc-500">
+          <div className="flex items-center gap-1.5">
+            <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png" alt="USDC" className="w-4 h-4 rounded-full" />
+            Balance: <span className="text-zinc-300">{formattedBalance} USDC</span>
+          </div>
+          {isTestnet && (
+            <a
+              href="https://faucet.circle.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-violet-400 hover:text-violet-300 transition-colors"
+            >
+              Get testnet USDC
+            </a>
+          )}
         </div>
       )}
 
@@ -107,7 +121,7 @@ export function DepositTab({ publicClient, isConnected, address, selectedVault, 
           disabled={isActive}
           className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 text-white font-semibold hover:shadow-lg hover:shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
-          {isActive ? 'Processing...' : `Deposit ${selectedVault.label}`}
+          Deposit {selectedVault.label}
         </button>
       ) : (
         <div className="space-y-2">

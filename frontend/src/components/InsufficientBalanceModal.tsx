@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface InsufficientBalanceModalProps {
@@ -7,14 +8,14 @@ interface InsufficientBalanceModalProps {
 }
 
 export function InsufficientBalanceModal({ requiredAmount, currentBalance, onClose }: InsufficientBalanceModalProps) {
-  return (
+  return createPortal(
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/60 backdrop-blur-md"
           onClick={onClose}
         />
 
@@ -23,7 +24,7 @@ export function InsufficientBalanceModal({ requiredAmount, currentBalance, onClo
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="relative glass-card rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl shadow-violet-500/10"
+          className="relative bg-zinc-900/90 border border-white/10 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl shadow-violet-500/10"
         >
           <div className="w-12 h-12 mx-auto rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
             <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -46,6 +47,7 @@ export function InsufficientBalanceModal({ requiredAmount, currentBalance, onClo
           </button>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }

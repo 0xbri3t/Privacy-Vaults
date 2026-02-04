@@ -12,6 +12,7 @@ export function useEnsResolution(input: string) {
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null)
   const [ensName, setEnsName] = useState<string | null>(null)
   const [isResolving, setIsResolving] = useState(false)
+  const [ensNotFound, setEnsNotFound] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null)
 
   useEffect(() => {
@@ -21,6 +22,7 @@ export function useEnsResolution(input: string) {
     if (!trimmed) {
       setResolvedAddress(null)
       setEnsName(null)
+      setEnsNotFound(false)
       return
     }
 
@@ -28,6 +30,7 @@ export function useEnsResolution(input: string) {
     if (/^0x[0-9a-fA-F]{40}$/.test(trimmed)) {
       setResolvedAddress(trimmed)
       setEnsName(null)
+      setEnsNotFound(false)
       return
     }
 
@@ -35,12 +38,14 @@ export function useEnsResolution(input: string) {
     if (!trimmed.includes('.')) {
       setResolvedAddress(null)
       setEnsName(null)
+      setEnsNotFound(false)
       return
     }
 
     // Debounce ENS resolution
     if (debounceRef.current) clearTimeout(debounceRef.current)
 
+    setEnsNotFound(false)
     debounceRef.current = setTimeout(async () => {
       setIsResolving(true)
       try {
@@ -50,13 +55,16 @@ export function useEnsResolution(input: string) {
         if (address) {
           setResolvedAddress(address)
           setEnsName(trimmed)
+          setEnsNotFound(false)
         } else {
           setResolvedAddress(null)
           setEnsName(null)
+          setEnsNotFound(true)
         }
       } catch {
         setResolvedAddress(null)
         setEnsName(null)
+        setEnsNotFound(true)
       } finally {
         setIsResolving(false)
       }
@@ -67,5 +75,5 @@ export function useEnsResolution(input: string) {
     }
   }, [input])
 
-  return { resolvedAddress, ensName, isResolving }
+  return { resolvedAddress, ensName, isResolving, ensNotFound }
 }

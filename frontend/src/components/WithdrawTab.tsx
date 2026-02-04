@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAccount } from 'wagmi'
 import { OpenfortButton } from '@openfort/react'
 import { useWithdraw } from '../hooks/useWithdraw.ts'
 import { StatusIndicator } from './StatusIndicator.tsx'
 import { CrossChainSelector } from './CrossChainSelector.tsx'
+import { WithdrawSuccessModal } from './WithdrawSuccessModal.tsx'
 import { useLiFiQuote } from '../hooks/useLiFiQuote.ts'
 import { useLiFiBridge } from '../hooks/useLiFiBridge.ts'
 import { useEnsResolution } from '../hooks/useEnsResolution.ts'
@@ -38,8 +39,12 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
   const { step, txHash, error, withdraw, reset } = useWithdraw(selectedVault.address)
   const { step: bridgeStep, txHash: bridgeTxHash, error: bridgeError, bridge, reset: bridgeReset } = useLiFiBridge()
 
+  // Success modal state — snapshot of data at withdrawal time
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const successSnapshot = useRef<{ recipient: string; ensName: string | null }>({ recipient: '', ensName: null })
+
   // ENS resolution
-  const { resolvedAddress, ensName, isResolving } = useEnsResolution(recipient)
+  const { resolvedAddress, ensName, isResolving, ensNotFound } = useEnsResolution(recipient)
   const { preferences, isLoading: isLoadingPrefs } = useEnsWithdrawPreferences(ensName)
 
   // Auto-populate cross-chain settings from ENS text records
@@ -55,8 +60,20 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
 
   // Use resolved address for the actual withdrawal
   const effectiveRecipient = resolvedAddress || recipient
+  // Recipient is valid only if resolvedAddress is set (valid 0x address or resolved ENS)
+  const isRecipientValid = !!resolvedAddress
 
   const effectiveCrossChain = crossChainEnabled && !isTestnet
+
+  // Show success modal and clear form when non-cross-chain withdraw completes
+  useEffect(() => {
+    if (step === 'done' && txHash && !effectiveCrossChain) {
+      successSnapshot.current = { recipient: effectiveRecipient, ensName: ensName }
+      setShowSuccessModal(true)
+      setNoteInput('')
+      setRecipient('')
+    }
+  }, [step, txHash])
 
   const { quote, isLoading: isLoadingQuote, error: quoteError } = useLiFiQuote({
     fromAmount: selectedVault.denomination.toString(),
@@ -82,7 +99,7 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
   }
 
   const handleWithdraw = () => {
-    if (!noteInput.trim() || !effectiveRecipient.trim()) return
+    if (!noteInput.trim() || !isRecipientValid) return
     withdraw(noteInput.trim(), effectiveRecipient.trim())
   }
 
@@ -97,13 +114,12 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
         <label className="text-sm text-zinc-300 font-medium">
           Withdrawal Note
         </label>
-        <textarea
+        <input
           value={noteInput}
           onChange={(e) => setNoteInput(e.target.value)}
           placeholder="0x..."
-          rows={3}
           disabled={isActive}
-          className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-xl text-sm font-mono text-white placeholder-zinc-600 resize-none focus:outline-none focus:border-violet-500/60 transition-colors"
+          className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-xl text-sm font-mono text-white placeholder-zinc-600 focus:outline-none focus:border-violet-500/60 transition-colors"
         />
         <label className="block">
           <span className="text-xs text-zinc-500 cursor-pointer hover:text-violet-400 transition-colors">
@@ -146,6 +162,11 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
             Resolving ENS name...
           </p>
         )}
+        {ensNotFound && (
+          <p className="text-xs text-red-400">
+            ENS name not found — no address is linked to this name.
+          </p>
+        )}
         {ensName && resolvedAddress && (
           <div className="space-y-1">
             <p className="text-xs text-violet-400">
@@ -182,10 +203,10 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
       {isConnected ? (
         <button
           onClick={handleWithdraw}
-          disabled={isActive || isBridging || !noteInput.trim() || !effectiveRecipient.trim()}
+          disabled={isActive || isBridging || !noteInput.trim() || !isRecipientValid}
           className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 text-white font-semibold hover:shadow-lg hover:shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
-          {isActive ? 'Processing...' : isBridging ? 'Bridging...' : `Withdraw ${selectedVault.label}`}
+          Withdraw {selectedVault.label}
         </button>
       ) : (
         <div className="space-y-2">
@@ -221,19 +242,18 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
         </button>
       )}
 
-      {/* Success — base chain withdraw done */}
-      {step === 'done' && txHash && bridgeStep === 'idle' && !effectiveCrossChain && (
-        <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4 text-green-300 text-sm">
-          Withdrawal successful!{' '}
-          <a
-            href={`${networkConfig.explorerBaseUrl}/tx/${txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-green-400 hover:underline font-medium"
-          >
-            View transaction
-          </a>
-        </div>
+      {/* Success modal — base chain withdraw done */}
+      {showSuccessModal && txHash && (
+        <WithdrawSuccessModal
+          amount={selectedVault.displayAmount.toString()}
+          network={isTestnet ? 'Base Sepolia' : 'Base'}
+          token="USDC"
+          recipient={successSnapshot.current.recipient}
+          ensName={successSnapshot.current.ensName}
+          txHash={txHash}
+          explorerUrl={networkConfig.explorerBaseUrl}
+          onClose={() => { setShowSuccessModal(false); reset(); }}
+        />
       )}
 
       {/* Success — withdraw done, trigger bridge */}

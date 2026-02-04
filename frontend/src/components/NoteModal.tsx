@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface NoteModalProps {
@@ -8,6 +9,7 @@ interface NoteModalProps {
 
 export function NoteModal({ note, onClose }: NoteModalProps) {
   const [copied, setCopied] = useState(false)
+  const [backedUp, setBackedUp] = useState(false)
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(note)
@@ -25,7 +27,7 @@ export function NoteModal({ note, onClose }: NoteModalProps) {
     URL.revokeObjectURL(url)
   }
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         {/* Backdrop */}
@@ -33,8 +35,7 @@ export function NoteModal({ note, onClose }: NoteModalProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-          onClick={onClose}
+          className="absolute inset-0 bg-black/60 backdrop-blur-md"
         />
 
         {/* Modal */}
@@ -43,7 +44,7 @@ export function NoteModal({ note, onClose }: NoteModalProps) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="relative glass-card rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl shadow-violet-500/10"
+          className="relative bg-zinc-900/90 border border-white/10 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl shadow-violet-500/10"
         >
           <h3 className="text-xl font-bold text-white">Deposit Successful</h3>
 
@@ -54,11 +55,6 @@ export function NoteModal({ note, onClose }: NoteModalProps) {
 
           <div className="bg-zinc-900/50 border border-zinc-700 rounded-xl p-4 font-mono text-xs text-violet-300 break-all select-all max-h-32 overflow-y-auto">
             {note}
-          </div>
-
-          <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/20 p-4 text-yellow-300 text-sm">
-            <strong>Save this note!</strong> It is the only way to withdraw your
-            funds. If you lose it, your deposit is unrecoverable.
           </div>
 
           <div className="flex gap-3">
@@ -76,14 +72,30 @@ export function NoteModal({ note, onClose }: NoteModalProps) {
             </button>
           </div>
 
+          <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/20 p-4 text-yellow-300 text-base font-bold uppercase tracking-wide leading-relaxed">
+            Save this note! It is the only way to withdraw your funds. If you lose it, your deposit is unrecoverable.
+          </div>
+
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={backedUp}
+              onChange={(e) => setBackedUp(e.target.checked)}
+              className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-violet-500 focus:ring-violet-500/50 accent-violet-500"
+            />
+            <span className="text-sm text-zinc-300">I have backed up my withdrawal note</span>
+          </label>
+
           <button
             onClick={onClose}
-            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 text-white font-semibold hover:shadow-lg hover:shadow-violet-500/20 transition-all"
+            disabled={!backedUp}
+            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 text-white font-semibold hover:shadow-lg hover:shadow-violet-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             Done
           </button>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }

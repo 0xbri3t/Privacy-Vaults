@@ -22,15 +22,6 @@ export function StatusIndicator({
 
   return (
     <div className="space-y-1.5 mt-4">
-      {/* Active step banner */}
-      {!isDone && !isError && currentIndex >= 0 && (
-        <div className="rounded-xl bg-violet-500/10 border border-violet-500/20 px-4 py-3 flex items-center gap-3 mb-3">
-          <Spinner size="sm" />
-          <span className="text-sm text-violet-300 font-medium">
-            {steps[currentIndex].label}...
-          </span>
-        </div>
-      )}
 
       {/* Step list */}
       {steps.map((step, i) => {

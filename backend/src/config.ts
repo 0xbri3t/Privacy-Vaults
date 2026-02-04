@@ -1,23 +1,3 @@
-interface PaymentConfig {
-  scheme: string;
-  network: string;
-  resource: string;
-  description: string;
-  mimeType: string;
-  maxAmountRequired: string;
-  maxTimeoutSeconds?: number;
-  asset: string;
-  extra: {
-    name: string;
-    version: string;
-  };
-}
-
-interface PaywallConfig {
-  payToAddress: string;
-  payment: PaymentConfig;
-}
-
 interface VaultConfig {
   usdcAddress: string;
   chainId: number;
@@ -38,7 +18,6 @@ interface OpenfortConfig {
 export interface Config {
   port: number;
   allowedOrigins: string[];
-  paywall: PaywallConfig;
   vault: VaultConfig;
   openfort: OpenfortConfig;
 }
@@ -58,23 +37,6 @@ export function loadConfig(): Config {
   return {
     port: toNumber(process.env.PORT) ?? 3001,
     allowedOrigins: parseOrigins(process.env.CORS_ORIGINS),
-    paywall: {
-      payToAddress: process.env.PAY_TO_ADDRESS ?? process.env.ADDRESS ?? "",
-      payment: {
-        scheme: "exact",
-        network: process.env.X402_NETWORK ?? "",
-        resource: process.env.X402_RESOURCE ?? "",
-        description: process.env.X402_DESCRIPTION ?? "",
-        mimeType: process.env.X402_MIME_TYPE ?? "",
-        maxAmountRequired: process.env.X402_MAX_AMOUNT ?? "",
-        maxTimeoutSeconds: toNumber(process.env.X402_TIMEOUT),
-        asset: process.env.X402_ASSET_ADDRESS ?? "",
-        extra: {
-          name: process.env.X402_ASSET_NAME ?? "",
-          version: process.env.X402_ASSET_VERSION ?? "",
-        },
-      },
-    },
     vault: {
       usdcAddress: process.env.USDC_ADDRESS ?? "0x0000000000000000000000000000000000000000",
       chainId: toNumber(process.env.CHAIN_ID) ?? 84532,

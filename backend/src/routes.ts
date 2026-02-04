@@ -1,7 +1,6 @@
 import type { Request, Response } from "express";
 import type { Openfort } from "@openfort/openfort-node";
 import type { Config } from "./config.js";
-import { decodePaymentHeader, createPaymentRequiredResponse } from "./payment.js";
 import { relayVaultDeposit, relayVaultWithdraw, getCommitments, getCurrentYieldIndex, type VaultDepositRequest, type VaultWithdrawRequest } from "./vault.js";
 
 const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/;
@@ -13,7 +12,7 @@ function isValidAddress(value: unknown): value is string {
 export async function handleHealth(_req: Request, res: Response): Promise<void> {
   res.status(200).json({
     status: "ok",
-    message: "x402 demo server is running",
+    message: "Privacy Vault server is running",
   });
 }
 
@@ -54,53 +53,6 @@ export async function handleShieldSession(
     console.error("Shield session error:", error instanceof Error ? error.message : "Unknown error");
     res.status(500).json({
       error: "Failed to create encryption session",
-    });
-  }
-}
-
-export async function handleProtectedContent(
-  req: Request,
-  res: Response,
-  paywall: Config["paywall"]
-): Promise<void> {
-  const paymentHeader = req.headers["x-payment"] as string | undefined;
-  const transactionHash = req.headers["x-transaction-hash"] as string | undefined;
-
-  if (!paymentHeader && !transactionHash) {
-    res.status(402).json(createPaymentRequiredResponse(paywall));
-    return;
-  }
-
-  if (transactionHash) {
-    res.status(200).json({
-      success: true,
-      message: "Payment accepted via on-chain transaction! Here's your protected content.",
-      transactionHash,
-      content: {
-        title: "Premium Content Unlocked",
-        data: "This is the protected content you paid for!",
-        timestamp: new Date().toISOString(),
-      },
-    });
-    return;
-  }
-
-  try {
-    decodePaymentHeader(paymentHeader!);
-    res.status(200).json({
-      success: true,
-      message: "Payment accepted! Here's your protected content.",
-      content: {
-        title: "Premium Content Unlocked",
-        data: "This is the protected content you paid for!",
-        timestamp: new Date().toISOString(),
-      },
-    });
-  } catch (error) {
-    console.error("Payment validation error:", error instanceof Error ? error.message : "Unknown error");
-    res.status(402).json({
-      error: "Invalid payment",
-      x402Version: 1,
     });
   }
 }

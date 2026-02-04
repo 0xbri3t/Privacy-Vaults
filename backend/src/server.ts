@@ -3,7 +3,7 @@ import type { Request, Response, NextFunction } from "express";
 import { config } from "dotenv";
 import { loadConfig } from "./config.js";
 import { createOpenfortClient } from "./openfort.js";
-import { handleHealth, handleShieldSession, handleProtectedContent, handleVaultDeposit, handleVaultWithdraw, handleVaultCommitments, handleYieldIndex } from "./routes.js";
+import { handleHealth, handleShieldSession, handleVaultDeposit, handleVaultWithdraw, handleVaultCommitments, handleYieldIndex } from "./routes.js";
 
 // Load .env.local
 config({ path: ".env.local" });
@@ -68,8 +68,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-PAYMENT, X-TRANSACTION-HASH");
-  res.setHeader("Access-Control-Expose-Headers", "X-PAYMENT-RESPONSE");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") {
     res.sendStatus(204);
@@ -81,7 +80,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // ------- Routes -------
 app.get("/api/health", handleHealth);
 app.post("/api/protected-create-encryption-session", rateLimit(10, 60_000), (req, res) => handleShieldSession(req, res, openfortClient, env.openfort.shield));
-app.all("/api/protected-content", rateLimit(30, 60_000), (req, res) => handleProtectedContent(req, res, env.paywall));
 app.post("/api/vault/deposit", rateLimit(5, 60_000), (req, res) => handleVaultDeposit(req, res, env.vault));
 app.post("/api/vault/withdraw", rateLimit(5, 60_000), (req, res) => handleVaultWithdraw(req, res, env.vault));
 app.get("/api/vault/commitments", rateLimit(20, 60_000), (_req, res) => handleVaultCommitments(_req, res, env.vault));
@@ -101,7 +99,6 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 console.log(`
   Privacy Vault Server
   Running on: http://localhost:${env.port}
-  Network: ${env.paywall.payment.network}
 `);
 
 app.listen(env.port, () => {

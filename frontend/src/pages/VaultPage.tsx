@@ -73,7 +73,7 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
             <div className="relative z-10 w-full px-6 pt-5 pb-4 flex items-center justify-between">
                 <button
                     onClick={onBack}
-                    className="text-lg font-bold text-amber-500 hover:opacity-80 transition-opacity"
+                    className="text-lg font-bold text-[var(--text-primary)] hover:opacity-80 transition-opacity"
                 >
                     Privacy Vault
                 </button>
@@ -82,9 +82,9 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
                     <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium ${
                         isMainnet
                             ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            : 'bg-zinc-400/10 text-zinc-400 border border-zinc-400/20'
                     }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${isMainnet ? 'bg-green-400' : 'bg-amber-400'} animate-pulse`} />
+                        <span className={`w-1.5 h-1.5 rounded-full ${isMainnet ? 'bg-green-400' : 'bg-zinc-400'} animate-pulse`} />
                         {isMainnet ? 'Mainnet' : 'Testnet'} mode
                     </span>
                     <OpenfortButton label={isAuthenticated ? undefined : 'Sign In'} />
@@ -104,7 +104,7 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
             {isAuthenticated && (isLoadingWallets || isConnecting) && (
                 <div className="relative z-10 max-w-lg mx-auto px-4 pb-4">
                     <div className="glass-card rounded-xl p-4 flex items-center gap-3">
-                        <span className="inline-block w-4 h-4 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+                        <span className="inline-block w-4 h-4 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
                         <p className="text-sm text-[var(--text-secondary)]">Setting up your wallet...</p>
                     </div>
                 </div>
@@ -114,7 +114,7 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
             {/* Main content — two-card layout */}
             <div className="relative z-10 max-w-6xl mx-auto px-4 pb-8 flex flex-col lg:flex-row gap-6">
                 <div className="w-full lg:w-1/2 min-h-[344px]">
-                    <div className="glass-card rounded-2xl shadow-xl shadow-amber-500/5 h-full flex flex-col">
+                    <div className="glass-card rounded-2xl shadow-xl shadow-black/10 h-full flex flex-col">
                         {/* Tabs */}
                         <div className="flex overflow-hidden rounded-t-2xl">
                             {(['deposit', 'withdraw'] as const).map((t) => (
@@ -128,7 +128,7 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
                                 >
                                     {t.charAt(0).toUpperCase() + t.slice(1)}
                                     {tab === t && (
-                                        <span className="absolute bottom-0 inset-x-4 h-0.5 bg-amber-500 rounded-full" />
+                                        <span className="absolute bottom-0 inset-x-4 h-0.5 bg-[var(--text-primary)] rounded-full" />
                                     )}
                                 </button>
                             ))}

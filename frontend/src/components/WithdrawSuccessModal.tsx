@@ -71,7 +71,7 @@ export function WithdrawSuccessModal({
               <div className="text-right">
                 {ensName ? (
                   <div className="space-y-0.5">
-                    <span className="text-sm font-medium text-amber-500">{ensName}</span>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{ensName}</span>
                     <p className="text-xs font-mono text-[var(--text-tertiary)]">{shortenAddress(recipient)}</p>
                   </div>
                 ) : (
@@ -86,7 +86,7 @@ export function WithdrawSuccessModal({
             href={`${explorerUrl}/tx/${txHash}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] text-sm font-medium text-amber-500 hover:text-amber-400 transition-colors"
+            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
             View transaction
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -97,7 +97,7 @@ export function WithdrawSuccessModal({
           {/* Close */}
           <button
             onClick={onClose}
-            className="w-full py-3 px-4 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/20 transition-all"
+            className="w-full py-3 px-4 rounded-xl bg-white text-zinc-950 font-semibold hover:bg-zinc-200 hover:shadow-lg hover:shadow-white/10 transition-all"
           >
             Done
           </button>

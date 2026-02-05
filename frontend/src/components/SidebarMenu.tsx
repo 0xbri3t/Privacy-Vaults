@@ -79,9 +79,9 @@ export function SidebarMenu({ open, onClose }: SidebarMenuProps) {
               <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${
                 isMainnet
                   ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  : 'bg-zinc-400/10 text-zinc-400 border border-zinc-400/20'
               }`}>
-                <span className={`w-2 h-2 rounded-full ${isMainnet ? 'bg-green-400' : 'bg-amber-400'} animate-pulse`} />
+                <span className={`w-2 h-2 rounded-full ${isMainnet ? 'bg-green-400' : 'bg-zinc-400'} animate-pulse`} />
                 {mode === 'mainnet' ? 'Base Mainnet' : 'Base Sepolia Testnet'}
               </div>
             </div>
@@ -115,7 +115,7 @@ function ToggleRow({
         onClick={onChange}
         disabled={disabled}
         className={`relative w-10 h-5.5 rounded-full transition-colors ${
-          checked ? 'bg-amber-500' : 'bg-[var(--bg-hover)]'
+          checked ? 'bg-zinc-300' : 'bg-[var(--bg-hover)]'
         } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
         style={{ height: '22px' }}
       >

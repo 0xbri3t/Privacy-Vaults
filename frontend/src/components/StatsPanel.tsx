@@ -12,11 +12,11 @@ export function StatsPanel({ selectedVault, networkConfig }: StatsPanelProps) {
   const latest10 = [...deposits].reverse().slice(0, 10)
 
   return (
-    <div className="glass-card rounded-2xl shadow-xl shadow-amber-500/5 p-5 flex flex-col h-full">
+    <div className="glass-card rounded-2xl shadow-xl shadow-black/10 p-5 flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center gap-2.5 mb-4">
         <h2 className="text-base font-semibold text-[var(--text-primary)]">Statistics</h2>
-        <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/20">
+        <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-white/10 text-[var(--text-secondary)] border border-white/15">
           {selectedVault.label}
         </span>
       </div>
@@ -26,7 +26,7 @@ export function StatsPanel({ selectedVault, networkConfig }: StatsPanelProps) {
         <p className="text-xs text-[var(--text-tertiary)] mb-0.5">Anonymity set</p>
         {isLoading ? (
           <div className="flex items-center gap-2">
-            <span className="inline-block w-3 h-3 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+            <span className="inline-block w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
             <span className="text-xs text-[var(--text-tertiary)]">Loading...</span>
           </div>
         ) : error ? (
@@ -44,7 +44,7 @@ export function StatsPanel({ selectedVault, networkConfig }: StatsPanelProps) {
         <p className="text-xs text-[var(--text-tertiary)] mb-2">Latest deposits</p>
         {isLoading ? (
           <div className="flex items-center gap-2">
-            <span className="inline-block w-3 h-3 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+            <span className="inline-block w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
             <span className="text-sm text-[var(--text-tertiary)]">Loading...</span>
           </div>
         ) : error ? null : deposits.length === 0 ? (

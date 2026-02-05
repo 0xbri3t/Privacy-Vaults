@@ -22,18 +22,18 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
     <div className="relative min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] overflow-hidden">
       {/* Plasma WebGL background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <Plasma color="#f59e0b" speed={0.3} scale={1.2} opacity={0.15} mouseInteractive={false} />
+        <Plasma color="#a1a1aa" speed={0.3} scale={1.2} opacity={0.08} mouseInteractive={false} />
       </div>
 
       {/* Navbar */}
       <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl border-b border-[var(--border-subtle)]" style={{ backgroundColor: 'color-mix(in srgb, var(--bg-page) 60%, transparent)' }}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="text-lg font-bold text-amber-500">
+          <span className="text-lg font-bold text-[var(--text-primary)]">
             Privacy Vault
           </span>
           <button
             onClick={onLaunch}
-            className="px-5 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/25 transition-all"
+            className="px-5 py-2 rounded-lg bg-white text-zinc-950 text-sm font-medium hover:bg-zinc-200 hover:shadow-lg hover:shadow-white/10 transition-all"
           >
             Launch App
           </button>
@@ -41,7 +41,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
       </nav>
 
       {/* Hero */}
-      <Spotlight className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 pt-16" fill="rgba(245,158,11,0.2)">
+      <Spotlight className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 pt-16" fill="rgba(161,161,170,0.12)">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -60,7 +60,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
           <div className="mt-10 flex items-center justify-center gap-4">
             <button
               onClick={onLaunch}
-              className="px-8 py-3.5 rounded-xl bg-amber-500 text-white font-semibold text-lg hover:bg-amber-400 hover:shadow-xl hover:shadow-amber-500/25 transition-all"
+              className="px-8 py-3.5 rounded-xl bg-white text-zinc-950 font-semibold text-lg hover:bg-zinc-200 hover:shadow-xl hover:shadow-white/10 transition-all"
             >
               Launch App
             </button>

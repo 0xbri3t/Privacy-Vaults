@@ -17,24 +17,18 @@ export function ZKProofAnimation({ visible }: ZKProofAnimationProps) {
     const H = container.clientHeight
 
     const COL = {
-      bg: 0x050507,
-      prover: 0xd4a853,
-      proverLight: 0xf0d78c,
-      verifier: 0x00e5cc,
-      verifierLight: 0x80fff0,
-      veil: 0x8888cc,
-      veilEdge: 0xaaaaff,
-      witness: 0xff9944,
-      proof: 0x00ffcc,
-      reject: 0xff3344,
+      gold: 0xd4a853,
+      goldBright: 0xf0d78c,
+      teal: 0x00e5cc,
+      tealBright: 0x80fff0,
+      veil: 0x3a3a5c,
     }
 
-    // ==================== SCENE ====================
     const scene = new THREE.Scene()
     scene.background = null
 
-    const camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 100)
-    camera.position.set(0, 0.5, 13)
+    const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 100)
+    camera.position.set(0, 0, 14)
     camera.lookAt(0, 0, 0)
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
@@ -42,592 +36,363 @@ export function ZKProofAnimation({ visible }: ZKProofAnimationProps) {
     renderer.setSize(W, H)
     renderer.setPixelRatio(window.devicePixelRatio)
     renderer.toneMapping = THREE.ACESFilmicToneMapping
-    renderer.toneMappingExposure = 1.1
+    renderer.toneMappingExposure = 1.0
     container.appendChild(renderer.domElement)
 
     // ==================== LIGHTING ====================
-    scene.add(new THREE.AmbientLight(0x0a0a15, 0.5))
+    scene.add(new THREE.AmbientLight(0x0a0a18, 0.4))
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.15)
+    keyLight.position.set(2, 4, 5)
+    scene.add(keyLight)
 
-    const proverAreaLight = new THREE.PointLight(COL.prover, 0.3, 15)
-    proverAreaLight.position.set(-4, 2, 2)
-    scene.add(proverAreaLight)
+    // ==================== BARRIER ====================
+    const barrierGroup = new THREE.Group()
+    scene.add(barrierGroup)
 
-    const verifierAreaLight = new THREE.PointLight(COL.verifier, 0.3, 15)
-    verifierAreaLight.position.set(4, 2, 2)
-    scene.add(verifierAreaLight)
+    const barrierLine = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -4.5, 0), new THREE.Vector3(0, 4.5, 0)]),
+      new THREE.LineBasicMaterial({ color: COL.veil, transparent: true, opacity: 0.25 })
+    )
+    barrierGroup.add(barrierLine)
 
-    const topLight = new THREE.DirectionalLight(0xffffff, 0.2)
-    topLight.position.set(0, 5, 3)
-    scene.add(topLight)
+    const barrierGlow = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.3, 9),
+      new THREE.MeshBasicMaterial({ color: COL.veil, transparent: true, opacity: 0.04, side: THREE.DoubleSide })
+    )
+    barrierGroup.add(barrierGlow)
 
-    // ==================== THE VEIL (barrier) ====================
-    const veilGroup = new THREE.Group()
-    scene.add(veilGroup)
+    const barrierGlow2 = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.0, 9),
+      new THREE.MeshBasicMaterial({ color: COL.veil, transparent: true, opacity: 0.015, side: THREE.DoubleSide })
+    )
+    barrierGroup.add(barrierGlow2)
 
-    const veilGeo = new THREE.PlaneGeometry(0.08, 8, 1, 60)
-    const veilMat = new THREE.MeshPhysicalMaterial({
-      color: COL.veil,
-      metalness: 0.3,
-      roughness: 0.1,
-      transparent: true,
-      opacity: 0.12,
-      emissive: COL.veil,
-      emissiveIntensity: 0.15,
-      side: THREE.DoubleSide,
-      clearcoat: 1.0,
-    })
-    const veilPlane = new THREE.Mesh(veilGeo, veilMat)
-    veilPlane.position.set(0, 0, 0)
-    veilGroup.add(veilPlane)
-
-    // Veil glow layers
-    for (let i = 0; i < 3; i++) {
-      const glowGeo = new THREE.PlaneGeometry(0.5 + i * 0.4, 8, 1, 1)
-      const glowMat = new THREE.MeshBasicMaterial({
-        color: COL.veilEdge,
-        transparent: true,
-        opacity: 0.03 - i * 0.008,
-        side: THREE.DoubleSide,
-      })
-      const glow = new THREE.Mesh(glowGeo, glowMat)
-      glow.position.set(0, 0, 0)
-      veilGroup.add(glow)
+    for (let i = 0; i < 20; i++) {
+      const y = (i / 19 - 0.5) * 8
+      barrierGroup.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.08, y, 0), new THREE.Vector3(0.08, y, 0)]),
+        new THREE.LineBasicMaterial({ color: COL.veil, transparent: true, opacity: 0.1 })
+      ))
     }
 
-    // Veil edge lines
-    const veilLines: { line: THREE.Line; baseY: number }[] = []
-    for (let i = 0; i < 12; i++) {
-      const y = (i / 11 - 0.5) * 7.5
-      const pts = [new THREE.Vector3(0, y, -0.2), new THREE.Vector3(0, y, 0.2)]
-      const lineGeo = new THREE.BufferGeometry().setFromPoints(pts)
-      const lineMat = new THREE.LineBasicMaterial({
-        color: COL.veilEdge,
-        transparent: true,
-        opacity: 0.08,
+    // ==================== PROVER (left) ====================
+    const proverGroup = new THREE.Group()
+    proverGroup.position.set(-3.5, 0, 0)
+    scene.add(proverGroup)
+
+    const knowledgeWire = new THREE.LineSegments(
+      new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(1.1, 1)),
+      new THREE.LineBasicMaterial({ color: COL.gold, transparent: true, opacity: 0.35 })
+    )
+    proverGroup.add(knowledgeWire)
+
+    const knowledgeCore = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.4, 1),
+      new THREE.MeshPhysicalMaterial({
+        color: COL.gold, metalness: 0.2, roughness: 0.1,
+        emissive: COL.gold, emissiveIntensity: 0.3,
+        transparent: true, opacity: 0.6, clearcoat: 0.8,
       })
-      const line = new THREE.Line(lineGeo, lineMat)
-      veilGroup.add(line)
-      veilLines.push({ line, baseY: y })
-    }
+    )
+    proverGroup.add(knowledgeCore)
 
-    // Horizontal scan lines on veil
-    for (let i = 0; i < 40; i++) {
-      const y = (i / 39 - 0.5) * 7.5
-      const pts = [new THREE.Vector3(-0.04, y, 0), new THREE.Vector3(0.04, y, 0)]
-      const lineGeo = new THREE.BufferGeometry().setFromPoints(pts)
-      const lineMat = new THREE.LineBasicMaterial({
-        color: COL.veil,
-        transparent: true,
-        opacity: 0.05,
-      })
-      const line = new THREE.Line(lineGeo, lineMat)
-      veilGroup.add(line)
-    }
+    const outerShell = new THREE.LineSegments(
+      new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(1.6, 0)),
+      new THREE.LineBasicMaterial({ color: COL.gold, transparent: true, opacity: 0.08 })
+    )
+    proverGroup.add(outerShell)
 
-    // ==================== PROVER SIDE (left) ====================
-    const proverMat = new THREE.MeshPhysicalMaterial({
-      color: COL.prover,
-      metalness: 0.2,
-      roughness: 0.1,
-      emissive: COL.prover,
-      emissiveIntensity: 0.3,
-      clearcoat: 0.8,
-      transparent: true,
-      opacity: 0.9,
-    })
-    const proverNode = new THREE.Mesh(new THREE.IcosahedronGeometry(0.45, 1), proverMat)
-    proverNode.position.set(-3.8, 0, 0)
-    scene.add(proverNode)
+    const proverLight = new THREE.PointLight(COL.gold, 0.2, 8)
+    proverGroup.add(proverLight)
 
-    const proverGlowMat = new THREE.MeshBasicMaterial({ color: COL.prover, transparent: true, opacity: 0.06 })
-    const proverGlow = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 16), proverGlowMat)
-    proverGlow.position.copy(proverNode.position)
-    scene.add(proverGlow)
+    // ==================== VERIFIER (right) ====================
+    const verifierGroup = new THREE.Group()
+    verifierGroup.position.set(3.5, 0, 0)
+    scene.add(verifierGroup)
 
-    // Prover particles
-    const PROVER_PARTICLE_COUNT = 120
-    const proverParticles: {
-      mesh: THREE.Mesh
-      baseAngle: number
-      radius: number
-      baseY: number
-      speed: number
-      phase: number
-      active: boolean
-    }[] = []
-    const proverParticleGroup = new THREE.Group()
-    scene.add(proverParticleGroup)
-
-    for (let i = 0; i < PROVER_PARTICLE_COUNT; i++) {
-      const size = 0.02 + Math.random() * 0.05
-      const geo = new THREE.SphereGeometry(size, 8, 8)
-      const mat = new THREE.MeshBasicMaterial({
-        color: Math.random() > 0.5 ? COL.proverLight : COL.witness,
-        transparent: true,
-        opacity: 0.0,
-      })
-      const mesh = new THREE.Mesh(geo, mat)
-
-      const angle = Math.random() * Math.PI * 2
-      const radius = 0.8 + Math.random() * 2.0
-      const yy = (Math.random() - 0.5) * 4
-
-      mesh.position.set(-3.8 + Math.cos(angle) * radius * 0.6, yy, Math.sin(angle) * radius * 0.3)
-      proverParticleGroup.add(mesh)
-
-      proverParticles.push({
-        mesh,
-        baseAngle: angle,
-        radius,
-        baseY: yy,
-        speed: 0.3 + Math.random() * 0.7,
-        phase: Math.random() * Math.PI * 2,
-        active: false,
+    function makeCircle(r: number, segments: number) {
+      return Array.from({ length: segments + 1 }, (_, i) => {
+        const a = (i / segments) * Math.PI * 2
+        return new THREE.Vector3(Math.cos(a) * r, Math.sin(a) * r, 0)
       })
     }
 
-    // ==================== VERIFIER SIDE (right) ====================
-    const verifierMat = new THREE.MeshPhysicalMaterial({
-      color: COL.verifier,
-      metalness: 0.15,
-      roughness: 0.1,
-      emissive: COL.verifier,
-      emissiveIntensity: 0.2,
-      clearcoat: 0.9,
-      transparent: true,
-      opacity: 0.85,
-    })
-    const verifierNode = new THREE.Mesh(new THREE.OctahedronGeometry(0.4, 0), verifierMat)
-    verifierNode.position.set(3.8, 0, 0)
-    scene.add(verifierNode)
+    const verifierRing = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(makeCircle(0.7, 64)),
+      new THREE.LineBasicMaterial({ color: COL.teal, transparent: true, opacity: 0.3 })
+    )
+    verifierGroup.add(verifierRing)
 
-    const verifierGlowMat = new THREE.MeshBasicMaterial({ color: COL.verifier, transparent: true, opacity: 0.0 })
-    const verifierGlow = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), verifierGlowMat)
-    verifierGlow.position.copy(verifierNode.position)
-    scene.add(verifierGlow)
+    const verifierDot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.08, 16, 16),
+      new THREE.MeshBasicMaterial({ color: COL.teal, transparent: true, opacity: 0.5 })
+    )
+    verifierGroup.add(verifierDot)
 
-    const verifyRingMat = new THREE.MeshBasicMaterial({ color: COL.verifier, transparent: true, opacity: 0.0 })
-    const verifyRing = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.015, 8, 48), verifyRingMat)
-    verifyRing.position.copy(verifierNode.position)
-    scene.add(verifyRing)
+    const verifierOuterRing = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(makeCircle(1.1, 64)),
+      new THREE.LineBasicMaterial({ color: COL.teal, transparent: true, opacity: 0.07 })
+    )
+    verifierGroup.add(verifierOuterRing)
 
-    // ==================== WITNESS ORB ====================
-    const witnessGroup = new THREE.Group()
-    witnessGroup.visible = false
+    const verifierLight = new THREE.PointLight(COL.teal, 0.1, 8)
+    verifierGroup.add(verifierLight)
 
-    const witnessCoreMat = new THREE.MeshPhysicalMaterial({
-      color: COL.witness,
-      metalness: 0.3,
-      roughness: 0.05,
-      emissive: COL.witness,
-      emissiveIntensity: 0.7,
-      clearcoat: 1.0,
-      transparent: true,
-      opacity: 1,
-    })
-    const witnessCore = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 1), witnessCoreMat)
-    witnessGroup.add(witnessCore)
+    // ==================== PROOF PULSE ====================
+    const proofDot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.06, 16, 16),
+      new THREE.MeshBasicMaterial({ color: COL.goldBright, transparent: true, opacity: 0 })
+    )
+    scene.add(proofDot)
 
-    const witnessGlowMat = new THREE.MeshBasicMaterial({ color: COL.witness, transparent: true, opacity: 0.15 })
-    const witnessGlow = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 16), witnessGlowMat)
-    witnessGroup.add(witnessGlow)
+    const proofGlow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.2, 16, 16),
+      new THREE.MeshBasicMaterial({ color: COL.gold, transparent: true, opacity: 0 })
+    )
+    scene.add(proofGlow)
 
-    const witnessLight = new THREE.PointLight(COL.witness, 0, 5)
-    witnessGroup.add(witnessLight)
-    scene.add(witnessGroup)
+    const TRAIL_COUNT = 18
+    const proofTrail: { mesh: THREE.Mesh }[] = []
+    for (let i = 0; i < TRAIL_COUNT; i++) {
+      const dot = new THREE.Mesh(
+        new THREE.SphereGeometry(0.03, 8, 8),
+        new THREE.MeshBasicMaterial({ color: COL.goldBright, transparent: true, opacity: 0 })
+      )
+      scene.add(dot)
+      proofTrail.push({ mesh: dot })
+    }
+    const trailHistory: THREE.Vector3[] = []
 
-    // ==================== PROOF ORB ====================
-    const proofGroup = new THREE.Group()
-    proofGroup.visible = false
-
-    const proofCoreMat = new THREE.MeshPhysicalMaterial({
-      color: COL.proof,
-      metalness: 0.1,
-      roughness: 0.0,
-      emissive: COL.proof,
-      emissiveIntensity: 0.8,
-      clearcoat: 1.0,
-      transparent: true,
-      opacity: 1,
-    })
-    const proofCore = new THREE.Mesh(new THREE.SphereGeometry(0.12, 32, 32), proofCoreMat)
-    proofGroup.add(proofCore)
-
-    const proofGlowMat = new THREE.MeshBasicMaterial({ color: COL.proof, transparent: true, opacity: 0.2 })
-    const proofGlow = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), proofGlowMat)
-    proofGroup.add(proofGlow)
-
-    const proofLight = new THREE.PointLight(COL.proof, 0, 6)
-    proofGroup.add(proofLight)
-    scene.add(proofGroup)
-
-    // ==================== VEIL RIPPLE EFFECT ====================
-    const rippleRings: { mesh: THREE.Mesh; active: boolean; scale: number; opacity: number }[] = []
-    for (let i = 0; i < 5; i++) {
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.1, 0.005, 8, 32),
-        new THREE.MeshBasicMaterial({ color: COL.veilEdge, transparent: true, opacity: 0 })
+    // ==================== RIPPLES ====================
+    const ripples: { mesh: THREE.Line; active: boolean; scale: number; opacity: number }[] = []
+    for (let i = 0; i < 4; i++) {
+      const ring = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(makeCircle(0.1, 48)),
+        new THREE.LineBasicMaterial({ color: COL.veil, transparent: true, opacity: 0 })
       )
       ring.rotation.y = Math.PI / 2
       scene.add(ring)
-      rippleRings.push({ mesh: ring, active: false, scale: 1, opacity: 0 })
+      ripples.push({ mesh: ring, active: false, scale: 1, opacity: 0 })
     }
     let rippleIdx = 0
-
-    function spawnRipple(pos: THREE.Vector3) {
-      const r = rippleRings[rippleIdx % rippleRings.length]
+    function spawnRipple(y: number) {
+      const r = ripples[rippleIdx++ % ripples.length]
       r.active = true
-      r.scale = 0.5
-      r.opacity = 0.4
-      r.mesh.position.copy(pos)
-      rippleIdx++
+      r.scale = 0.3
+      r.opacity = 0.35
+      r.mesh.position.set(0, y, 0)
     }
 
-    // ==================== WAVE RINGS ====================
-    const waveRings: { mesh: THREE.Mesh; active: boolean; scale: number; opacity: number }[] = []
-    for (let i = 0; i < 6; i++) {
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.1, 0.008, 8, 32),
-        new THREE.MeshBasicMaterial({ color: COL.verifier, transparent: true, opacity: 0 })
-      )
-      scene.add(ring)
-      waveRings.push({ mesh: ring, active: false, scale: 1, opacity: 0 })
-    }
-    let waveIdx = 0
+    // ==================== CONFIRM RING ====================
+    const confirmRing = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(makeCircle(1, 64)),
+      new THREE.LineBasicMaterial({ color: COL.tealBright, transparent: true, opacity: 0 })
+    )
+    confirmRing.position.copy(verifierGroup.position)
+    scene.add(confirmRing)
 
-    function spawnWave(pos: THREE.Vector3, color?: number) {
-      const w = waveRings[waveIdx % waveRings.length]
-      w.active = true
-      w.scale = 0.5
-      w.opacity = 0.35
-      w.mesh.position.copy(pos)
-      ;(w.mesh.material as THREE.MeshBasicMaterial).color.set(color || COL.verifier)
-      w.mesh.rotation.set(Math.random() * 0.3, Math.random() * 0.3, 0)
-      waveIdx++
-    }
+    // ==================== ANIMATION ====================
+    const PH = { IDLE: 0, COMPUTE: 1, EMIT: 2, TRAVEL: 3, CROSS: 4, ARRIVE: 5, CONFIRM: 6, FADE: 7 }
+    const DUR: Record<number, number> = { 0: 10, 1: 60, 2: 25, 3: 40, 4: 35, 5: 35, 6: 50, 7: 40 }
 
-    // ==================== ANIMATION STATE ====================
-    const PH_IDLE = 0
-    const PH_WITNESS_ENTER = 1
-    const PH_COMPUTE = 2
-    const PH_PROOF_FORM = 3
-    const PH_CROSS_VEIL = 4
-    const PH_VERIFY = 5
-    const PH_ACCEPT = 6
-    const PH_FADE = 7
-
-    let phase = PH_IDLE
-    let phaseTime = 0
+    let phase = PH.COMPUTE // Start immediately at compute
+    let pt = 0
     let time = 0
-
-    const IDLE_DUR = 80
-    const WITNESS_ENTER_DUR = 90
-    const COMPUTE_DUR = 160
-    const PROOF_FORM_DUR = 70
-    const CROSS_VEIL_DUR = 80
-    const VERIFY_DUR = 60
-    const ACCEPT_DUR = 100
-    const FADE_DUR = 80
-
+    let proofX = -3.5
     let animId: number
 
     function animate() {
       animId = requestAnimationFrame(animate)
       time += 0.01
-      phaseTime++
-
-      // ==================== IDLE ====================
-      if (phase === PH_IDLE) {
-        witnessGroup.visible = false
-        proofGroup.visible = false
-
-        proverParticles.forEach(p => {
-          ;(p.mesh.material as THREE.MeshBasicMaterial).opacity *= 0.95
-        })
-
-        if (phaseTime >= IDLE_DUR) {
-          phase = PH_WITNESS_ENTER
-          phaseTime = 0
-          witnessGroup.visible = true
-          witnessGroup.position.set(-7, 0, 0)
-        }
+      pt++
+      const p = Math.min(pt / DUR[phase], 1)
+      const next = () => {
+        phase = (phase + 1) % 8
+        pt = 0
       }
 
-      // ==================== WITNESS ENTERS PROVER ====================
-      else if (phase === PH_WITNESS_ENTER) {
-        const prog = Math.min(phaseTime / WITNESS_ENTER_DUR, 1)
-        const ease = 1 - Math.pow(1 - prog, 3)
-
-        witnessGroup.position.x = -7 + (-3.8 - -7) * ease
-        witnessGroup.position.y = Math.sin(prog * Math.PI) * 0.5
-
-        witnessCore.rotation.y = time * 3
-        witnessCore.rotation.x = time * 1.8
-        witnessLight.intensity = 1.0 + Math.sin(time * 4) * 0.3
-
-        proverMat.emissiveIntensity = 0.3 + prog * 0.3
-
-        if (prog >= 1) {
-          phase = PH_COMPUTE
-          phaseTime = 0
-          witnessGroup.visible = false
-          spawnWave(proverNode.position, COL.witness)
-        }
+      if (phase === PH.IDLE) {
+        ;(proofDot.material as THREE.MeshBasicMaterial).opacity = 0
+        ;(proofGlow.material as THREE.MeshBasicMaterial).opacity = 0
+        proofTrail.forEach(t => ((t.mesh.material as THREE.MeshBasicMaterial).opacity = 0))
+        ;(confirmRing.material as THREE.LineBasicMaterial).opacity = 0
+        trailHistory.length = 0
+        if (p >= 1) next()
       }
 
-      // ==================== PROVER COMPUTES ====================
-      else if (phase === PH_COMPUTE) {
-        const prog = Math.min(phaseTime / COMPUTE_DUR, 1)
-
-        proverMat.emissiveIntensity = 0.5 + Math.sin(time * 6) * 0.3
-        proverNode.rotation.y = time * 1.5
-        proverNode.rotation.x = time * 0.8
-        proverGlowMat.opacity = 0.08 + Math.sin(time * 4) * 0.04
-
-        const activeFraction = Math.min(prog * 2, 1)
-        proverParticles.forEach((p, i) => {
-          if (i / PROVER_PARTICLE_COUNT < activeFraction) {
-            p.active = true
-            const t = time * p.speed + p.phase
-            const angle = p.baseAngle + t * 1.5
-            const r = p.radius * (0.5 + 0.5 * Math.sin(t * 0.7))
-
-            p.mesh.position.x = -3.8 + Math.cos(angle) * r * 0.7
-            p.mesh.position.y = p.baseY + Math.sin(t * 1.3) * 0.8
-            p.mesh.position.z = Math.sin(angle) * r * 0.35
-
-            p.mesh.position.x = Math.min(p.mesh.position.x, -0.4)
-
-            const targetOpacity = 0.3 + 0.4 * Math.sin(t * 2)
-            const mat = p.mesh.material as THREE.MeshBasicMaterial
-            mat.opacity += (targetOpacity - mat.opacity) * 0.1
-          }
-        })
-
-        proverAreaLight.intensity = 0.3 + prog * 0.5
-
-        if (prog > 0.7) {
-          const convergeProg = (prog - 0.7) / 0.3
-          proverParticles.forEach(p => {
-            if (p.active) {
-              const targetX = -1.2
-              const targetY = 0
-              p.mesh.position.x += (targetX - p.mesh.position.x) * convergeProg * 0.03
-              p.mesh.position.y += (targetY - p.mesh.position.y) * convergeProg * 0.03
-              p.mesh.position.z *= 1 - convergeProg * 0.03
-            }
-          })
-        }
-
-        if (phaseTime >= COMPUTE_DUR) {
-          phase = PH_PROOF_FORM
-          phaseTime = 0
-        }
+      else if (phase === PH.COMPUTE) {
+        ;(knowledgeWire.material as THREE.LineBasicMaterial).opacity = 0.35 + p * 0.35
+        ;(knowledgeCore.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.3 + p * 0.6
+        ;(knowledgeCore.material as THREE.MeshPhysicalMaterial).opacity = 0.6 + p * 0.3
+        ;(outerShell.material as THREE.LineBasicMaterial).opacity = 0.08 + p * 0.12
+        proverLight.intensity = 0.2 + p * 0.6
+        const spd = 1 + p * 2
+        knowledgeWire.rotation.y += 0.008 * spd
+        knowledgeWire.rotation.x += 0.005 * spd
+        knowledgeCore.rotation.y += 0.012 * spd
+        outerShell.rotation.y -= 0.004 * spd
+        outerShell.rotation.z += 0.003 * spd
+        if (p >= 1) next()
       }
 
-      // ==================== PROOF FORMS ====================
-      else if (phase === PH_PROOF_FORM) {
-        const prog = Math.min(phaseTime / PROOF_FORM_DUR, 1)
-        const ease = prog * prog * (3 - 2 * prog)
-
-        proverParticles.forEach(p => {
-          if (p.active) {
-            p.mesh.position.x += (-1.0 - p.mesh.position.x) * 0.08
-            p.mesh.position.y *= 0.92
-            p.mesh.position.z *= 0.92
-            ;(p.mesh.material as THREE.MeshBasicMaterial).opacity *= 0.95
-            const s = 1 - ease * 0.8
-            p.mesh.scale.setScalar(Math.max(0.1, s))
-          }
-        })
-
-        if (prog > 0.3) {
-          proofGroup.visible = true
-          proofGroup.position.set(-1.0, 0, 0)
-          const appear = (prog - 0.3) / 0.7
-          const scale = appear * appear
-          proofCore.scale.setScalar(scale)
-          proofGlow.scale.setScalar(scale)
-          proofCore.rotation.y = time * 2
-          proofLight.intensity = scale * 1.5
-        }
-
-        proverMat.emissiveIntensity = 0.5 - prog * 0.2
-        proverAreaLight.intensity = 0.8 - prog * 0.4
-
-        if (phaseTime >= PROOF_FORM_DUR) {
-          phase = PH_CROSS_VEIL
-          phaseTime = 0
-          proverParticles.forEach(p => {
-            ;(p.mesh.material as THREE.MeshBasicMaterial).opacity = 0
-            p.active = false
-          })
-        }
+      else if (phase === PH.EMIT) {
+        const ease = p * p
+        proofX = -3.5 + ease * 1.5
+        proofDot.position.set(proofX, 0, 0)
+        proofGlow.position.set(proofX, 0, 0)
+        ;(proofDot.material as THREE.MeshBasicMaterial).opacity = ease * 0.9
+        ;(proofGlow.material as THREE.MeshBasicMaterial).opacity = ease * 0.12
+        ;(knowledgeWire.material as THREE.LineBasicMaterial).opacity = 0.7 - p * 0.15
+        ;(knowledgeCore.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.9 - p * 0.2
+        trailHistory.unshift(new THREE.Vector3(proofX, 0, 0))
+        if (trailHistory.length > TRAIL_COUNT) trailHistory.pop()
+        if (p >= 1) next()
       }
 
-      // ==================== PROOF CROSSES VEIL ====================
-      else if (phase === PH_CROSS_VEIL) {
-        const prog = Math.min(phaseTime / CROSS_VEIL_DUR, 1)
+      else if (phase === PH.TRAVEL) {
+        const ease = p * p * (3 - 2 * p)
+        proofX = -2.0 + ease * 1.8
+        const py = Math.sin(p * Math.PI) * 0.12
+        proofDot.position.set(proofX, py, 0)
+        proofGlow.position.set(proofX, py, 0)
+        ;(proofDot.material as THREE.MeshBasicMaterial).opacity = 0.9
+        ;(proofGlow.material as THREE.MeshBasicMaterial).opacity = 0.12
+        ;(knowledgeWire.material as THREE.LineBasicMaterial).opacity = 0.55 - p * 0.15
+        ;(knowledgeCore.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.7 - p * 0.2
+        proverLight.intensity = 0.8 - p * 0.4
+        trailHistory.unshift(new THREE.Vector3(proofX, py, 0))
+        if (trailHistory.length > TRAIL_COUNT) trailHistory.pop()
+        if (p >= 1) next()
+      }
 
+      else if (phase === PH.CROSS) {
         let ease: number
-        if (prog < 0.4) {
-          ease = (prog / 0.4) * 0.3
-          ease = ease * ease * (3 - 2 * ease) * 0.3
-        } else if (prog < 0.55) {
-          ease = 0.3 + ((prog - 0.4) / 0.15) * 0.2
+        if (p < 0.5) {
+          ease = p * p * 2
         } else {
-          const afterProg = (prog - 0.55) / 0.45
-          ease = 0.5 + afterProg * afterProg * 0.5
+          const t = (p - 0.5) * 2
+          ease = 0.5 + t * t * 0.5
         }
+        proofX = -0.2 + ease * 1.2
+        proofDot.position.set(proofX, 0, 0)
+        proofGlow.position.set(proofX, 0, 0)
 
-        const startX = -1.0
-        const endX = 3.8
-        proofGroup.position.x = startX + (endX - startX) * ease
-        proofGroup.position.y = Math.sin(prog * Math.PI) * 0.15
-
-        proofCore.rotation.y = time * 3
-        proofLight.intensity = 1.5 + Math.sin(time * 5) * 0.5
-
-        const distToVeil = Math.abs(proofGroup.position.x)
-        if (distToVeil < 1.0) {
-          const veilReact = 1 - distToVeil
-          veilMat.emissiveIntensity = 0.15 + veilReact * 0.6
-          veilMat.opacity = 0.12 + veilReact * 0.15
-
-          if (prog > 0.39 && prog < 0.42 && phaseTime % 3 === 0) {
-            spawnRipple(new THREE.Vector3(0, proofGroup.position.y, 0))
-          }
-        } else {
-          veilMat.emissiveIntensity = 0.15
-          veilMat.opacity = 0.12
+        const dist = Math.abs(proofX)
+        if (dist < 0.5) {
+          const react = 1 - dist * 2
+          ;(barrierLine.material as THREE.LineBasicMaterial).opacity = 0.25 + react * 0.4
+          ;(barrierGlow.material as THREE.MeshBasicMaterial).opacity = 0.04 + react * 0.08
         }
+        if (p > 0.3 && p < 0.35) spawnRipple(0)
+        if (p > 0.45 && p < 0.5) spawnRipple(0.08)
 
-        if (phaseTime >= CROSS_VEIL_DUR) {
-          phase = PH_VERIFY
-          phaseTime = 0
-          proofGroup.position.set(3.8, 0, 0)
-          spawnWave(verifierNode.position, COL.proof)
+        const mix = Math.max(0, (p - 0.4) / 0.6)
+        const c = new THREE.Color(COL.goldBright).lerp(new THREE.Color(COL.teal), mix)
+        ;(proofDot.material as THREE.MeshBasicMaterial).color.copy(c)
+        ;(proofGlow.material as THREE.MeshBasicMaterial).color.copy(c)
+
+        trailHistory.unshift(new THREE.Vector3(proofX, 0, 0))
+        if (trailHistory.length > TRAIL_COUNT) trailHistory.pop()
+
+        if (p >= 1) {
+          ;(barrierLine.material as THREE.LineBasicMaterial).opacity = 0.25
+          ;(barrierGlow.material as THREE.MeshBasicMaterial).opacity = 0.04
+          next()
         }
       }
 
-      // ==================== VERIFIER CHECKS ====================
-      else if (phase === PH_VERIFY) {
-        const prog = Math.min(phaseTime / VERIFY_DUR, 1)
+      else if (phase === PH.ARRIVE) {
+        const ease = 1 - Math.pow(1 - p, 3)
+        proofX = 1.0 + ease * 2.5
+        proofDot.position.set(proofX, 0, 0)
+        proofGlow.position.set(proofX, 0, 0)
+        ;(proofDot.material as THREE.MeshBasicMaterial).opacity = 0.9 * (1 - ease * 0.9)
+        ;(proofGlow.material as THREE.MeshBasicMaterial).opacity = 0.12 * (1 - ease * 0.5)
+        ;(proofDot.material as THREE.MeshBasicMaterial).color.set(COL.teal)
+        ;(proofGlow.material as THREE.MeshBasicMaterial).color.set(COL.teal)
 
-        const shrink = 1 - prog
-        proofCore.scale.setScalar(shrink)
-        proofGlow.scale.setScalar(shrink)
-        proofLight.intensity = 1.5 * shrink
+        ;(verifierRing.material as THREE.LineBasicMaterial).opacity = 0.3 + ease * 0.2
+        ;(verifierDot.material as THREE.MeshBasicMaterial).opacity = 0.5 + ease * 0.3
+        verifierLight.intensity = 0.1 + ease * 0.3
 
-        verifierMat.emissiveIntensity = 0.2 + prog * 0.6
-        verifierNode.rotation.y = time * 2
-        verifierNode.rotation.x = Math.sin(time * 3) * 0.3
-
-        verifyRingMat.opacity = prog * 0.3
-        verifyRing.rotation.x = time * 2
-        verifyRing.rotation.z = time * 1.5
-        const ringScale = 1 + Math.sin(time * 6) * 0.1
-        verifyRing.scale.setScalar(ringScale)
-
-        if (phaseTime >= VERIFY_DUR) {
-          phase = PH_ACCEPT
-          phaseTime = 0
-          proofGroup.visible = false
+        trailHistory.unshift(new THREE.Vector3(proofX, 0, 0))
+        if (trailHistory.length > TRAIL_COUNT) trailHistory.pop()
+        if (p >= 1) {
+          ;(proofDot.material as THREE.MeshBasicMaterial).opacity = 0
+          ;(proofGlow.material as THREE.MeshBasicMaterial).opacity = 0
+          next()
         }
       }
 
-      // ==================== ACCEPTED ====================
-      else if (phase === PH_ACCEPT) {
-        const prog = Math.min(phaseTime / ACCEPT_DUR, 1)
+      else if (phase === PH.CONFIRM) {
+        const flash = p < 0.15 ? p / 0.15 : Math.max(0, 1 - (p - 0.15) / 0.85)
+        ;(verifierDot.material as THREE.MeshBasicMaterial).opacity = 0.5 + flash * 0.5
+        ;(verifierDot.material as THREE.MeshBasicMaterial).color.set(COL.tealBright)
+        ;(verifierRing.material as THREE.LineBasicMaterial).opacity = 0.3 + flash * 0.4
+        ;(verifierRing.material as THREE.LineBasicMaterial).color.set(COL.tealBright)
+        ;(verifierOuterRing.material as THREE.LineBasicMaterial).opacity = 0.07 + flash * 0.15
+        verifierLight.intensity = 0.1 + flash * 0.8
+        ;(confirmRing.material as THREE.LineBasicMaterial).opacity = flash * 0.3
+        confirmRing.scale.setScalar(0.7 + p * 2.5)
 
-        const flash = prog < 0.2 ? prog / 0.2 : 1 - (prog - 0.2) / 0.8
-        verifierMat.emissiveIntensity = 0.8 + flash * 1.2
-        verifierMat.emissive.set(COL.verifierLight)
-        verifierGlowMat.opacity = flash * 0.15
-
-        verifyRingMat.opacity = (1 - prog) * 0.4
-        const expandScale = 1 + prog * 3
-        verifyRing.scale.setScalar(expandScale)
-        verifyRing.rotation.x = time * 1.5
-
-        if (phaseTime % 20 === 0 && prog < 0.6) {
-          spawnWave(verifierNode.position, COL.verifier)
-        }
-
-        verifierAreaLight.intensity = 0.3 + flash * 0.8
-
-        if (phaseTime >= ACCEPT_DUR) {
-          phase = PH_FADE
-          phaseTime = 0
-        }
+        ;(knowledgeWire.material as THREE.LineBasicMaterial).opacity = 0.35
+        ;(knowledgeCore.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.3
+        ;(outerShell.material as THREE.LineBasicMaterial).opacity = 0.08
+        proverLight.intensity = 0.2
+        proofTrail.forEach(t => {
+          ;(t.mesh.material as THREE.MeshBasicMaterial).opacity *= 0.9
+        })
+        if (p >= 1) next()
       }
 
-      // ==================== FADE / RESET ====================
-      else if (phase === PH_FADE) {
-        const prog = Math.min(phaseTime / FADE_DUR, 1)
+      else if (phase === PH.FADE) {
+        ;(verifierDot.material as THREE.MeshBasicMaterial).opacity = 0.5
+        ;(verifierDot.material as THREE.MeshBasicMaterial).color.set(COL.teal)
+        ;(verifierRing.material as THREE.LineBasicMaterial).opacity = 0.3
+        ;(verifierRing.material as THREE.LineBasicMaterial).color.set(COL.teal)
+        ;(verifierOuterRing.material as THREE.LineBasicMaterial).opacity = 0.07
+        verifierLight.intensity = 0.1
+        ;(confirmRing.material as THREE.LineBasicMaterial).opacity *= 0.92
+        proofTrail.forEach(t => {
+          ;(t.mesh.material as THREE.MeshBasicMaterial).opacity = 0
+        })
+        ;(proofDot.material as THREE.MeshBasicMaterial).color.set(COL.goldBright)
+        ;(proofGlow.material as THREE.MeshBasicMaterial).color.set(COL.gold)
+        if (p >= 1) next()
+      }
 
-        verifierMat.emissiveIntensity = 0.2 + (1 - prog) * 0.3
-        verifierMat.emissive.set(COL.verifier)
-        verifierGlowMat.opacity *= 0.93
-        verifyRingMat.opacity *= 0.9
-        proverMat.emissiveIntensity = 0.3
-        proverGlowMat.opacity *= 0.93
-        proverAreaLight.intensity = 0.3
-        verifierAreaLight.intensity = 0.3
+      // ==================== ALWAYS-ON ====================
+      knowledgeWire.rotation.y += 0.003
+      knowledgeWire.rotation.x += 0.002
+      knowledgeCore.rotation.y += 0.005
+      outerShell.rotation.y -= 0.002
+      outerShell.rotation.z += 0.001
 
-        if (phaseTime >= FADE_DUR) {
-          phase = PH_IDLE
-          phaseTime = 0
-          verifyRingMat.opacity = 0
-          verifierGlowMat.opacity = 0
-          proverGlowMat.opacity = 0
+      verifierDot.scale.setScalar(1 + Math.sin(time * 2) * 0.03)
+
+      proofTrail.forEach((t, i) => {
+        if (i < trailHistory.length) {
+          t.mesh.position.copy(trailHistory[i])
+          const fade = 1 - i / TRAIL_COUNT
+          ;(t.mesh.material as THREE.MeshBasicMaterial).opacity = fade * 0.4 * (proofDot.material as THREE.MeshBasicMaterial).opacity
+          ;(t.mesh.material as THREE.MeshBasicMaterial).color.copy((proofDot.material as THREE.MeshBasicMaterial).color)
+          t.mesh.scale.setScalar(fade * 0.8)
         }
-      }
-
-      // ==================== ALWAYS-ON AMBIENT ====================
-      proverNode.rotation.y += 0.003
-      proverNode.rotation.x = Math.sin(time * 0.5) * 0.1
-
-      verifierNode.rotation.y += 0.002
-
-      // Veil shimmer
-      const positions = veilPlane.geometry.attributes.position
-      for (let i = 0; i < positions.count; i++) {
-        const y = positions.getY(i)
-        const wave = Math.sin(y * 2 + time * 3) * 0.015 + Math.sin(y * 5 + time * 1.7) * 0.008
-        positions.setX(i, wave)
-      }
-      positions.needsUpdate = true
-
-      veilLines.forEach((vl, i) => {
-        ;(vl.line.material as THREE.LineBasicMaterial).opacity = 0.06 + Math.sin(time * 2 + i * 0.8) * 0.03
       })
 
-      // Ripple rings
-      rippleRings.forEach(r => {
+      ripples.forEach(r => {
         if (!r.active) return
-        r.scale += 0.12
-        r.opacity *= 0.92
+        r.scale += 0.06
+        r.opacity *= 0.94
         r.mesh.scale.setScalar(r.scale)
-        ;(r.mesh.material as THREE.MeshBasicMaterial).opacity = r.opacity
+        ;(r.mesh.material as THREE.LineBasicMaterial).opacity = r.opacity
         if (r.opacity < 0.005) {
           r.active = false
-          ;(r.mesh.material as THREE.MeshBasicMaterial).opacity = 0
+          ;(r.mesh.material as THREE.LineBasicMaterial).opacity = 0
         }
       })
 
-      // Wave rings
-      waveRings.forEach(w => {
-        if (!w.active) return
-        w.scale += 0.08
-        w.opacity *= 0.91
-        w.mesh.scale.setScalar(w.scale)
-        ;(w.mesh.material as THREE.MeshBasicMaterial).opacity = w.opacity
-        if (w.opacity < 0.005) {
-          w.active = false
-          ;(w.mesh.material as THREE.MeshBasicMaterial).opacity = 0
-        }
-      })
+      ;(barrierLine.material as THREE.LineBasicMaterial).opacity = 0.25 + Math.sin(time * 1.5) * 0.02
 
       renderer.render(scene, camera)
     }

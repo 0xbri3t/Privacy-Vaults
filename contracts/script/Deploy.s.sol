@@ -13,7 +13,7 @@ contract Deploy is Script {
     function run() external {
         address usdc = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913; // USDC on Base
         address aavePool = 0xA238Dd80C259a72e81d7e4664a9801593F98d1c5; // Aave V3 Pool on Base
-        address morphoVault = address(0); // TODO: set MetaMorpho USDC vault on Base
+        address morphoVault = 0xeE8F4eC5672F09119b96Ab6fB59C27E1b7e44b61; // Morpho USDC vault on Base
 
         uint256[4] memory denominations = [uint256(1e6), 10e6, 20e6, 50e6];
         string[4] memory labels = ["1 USDC", "10 USDC", "20 USDC", "50 USDC"];

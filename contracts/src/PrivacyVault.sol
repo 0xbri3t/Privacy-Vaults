@@ -41,17 +41,17 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable {
 
     event DepositWithAuthorization(bytes32 indexed commitment, uint32 leafIndex, uint256 timestamp, uint256 yieldIndex);
     event Withdrawal(address to, bytes32 nullifierHash, uint256 payout);
+    event PoolUpdated(address newAavePool, address newMorphoVault);
 
     error PrivacyVault__DepositValueMismatch(uint256 expected, uint256 actual);
     error PrivacyVault__InvalidRecipient(address expected, address actual);
-    error PrivacyVault__InvalidSender(address expected, address actual);
     error PrivacyVault__PaymentFailed(address recipient, uint256 amount);
     error PrivacyVault__NoteAlreadySpent(bytes32 nullifierHash);
     error PrivacyVault__UnknownRoot(bytes32 root);
     error PrivacyVault__InvalidWithdrawProof();
-    error PrivacyVault__FeeExceedsDepositValue(uint256 expected, uint256 actual);
     error PrivacyVault__CommitmentAlreadyAdded(bytes32 commitment);
     error PrivacyVault__InvalidYieldIndex();
+    error PrivacyVault__InvalidPoolAddress(string protocol, address provided);
 
     constructor(
         IVerifier _verifier,
@@ -62,6 +62,19 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable {
         IAavePool _aavePool,
         IMorphoVault _morphoVault
     ) IncrementalMerkleTree(_merkleTreeDepth, _hasher) Ownable(msg.sender) {
+        if (address(_verifier) == address(0)) revert PrivacyVault__InvalidWithdrawProof();
+        if (address(_hasher) == address(0)) revert PrivacyVault__InvalidWithdrawProof();
+        if (_denomination == 0) revert PrivacyVault__DepositValueMismatch({expected: _denomination, actual: 0});
+        if (address(_token) == address(0)) {
+            revert PrivacyVault__InvalidRecipient({expected: address(0), actual: address(0)});
+        }
+        if (address(_aavePool) != address(0) && address(_aavePool).code.length == 0) {
+            revert PrivacyVault__InvalidPoolAddress("Aave", address(_aavePool));
+        }
+        if (address(_morphoVault) != address(0) && address(_morphoVault).code.length == 0) {
+            revert PrivacyVault__InvalidPoolAddress("Morpho", address(_morphoVault));
+        }
+
         i_verifier = _verifier;
         DENOMINATION = _denomination;
         token = _token;
@@ -70,20 +83,24 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable {
 
         // Record Morpho share price at deployment to compute normalized growth
         initialMorphoSharePrice = _morphoVault.convertToAssets(ONE_SHARE);
-
-        _token.approve(address(_aavePool), type(uint256).max);
-        _token.approve(address(_morphoVault), type(uint256).max);
     }
 
+    // Trusted function to update strategy addresses in case of upgrades or emergencies.
     function setPools(address _aavePool, address _morphoVault) external onlyOwner {
-        if (_aavePool != address(0)) {
-            aavePool = IAavePool(_aavePool);
-            token.approve(address(_aavePool), type(uint256).max);
+        if (_aavePool != address(0) && _aavePool.code.length == 0) {
+            revert PrivacyVault__InvalidPoolAddress("Aave", _aavePool);
         }
-        if (_morphoVault != address(0)) {
-            morphoVault = IMorphoVault(_morphoVault);
-            token.approve(address(_morphoVault), type(uint256).max);
+        if (_morphoVault != address(0) && _morphoVault.code.length == 0) {
+            revert PrivacyVault__InvalidPoolAddress("Morpho", _morphoVault);
         }
+        if (_aavePool == address(aavePool) || _morphoVault == address(morphoVault)) {
+            revert PrivacyVault__InvalidPoolAddress("New pool address must be different from current", address(0));
+        }
+
+        if (address(_aavePool) != address(0)) aavePool = IAavePool(_aavePool);
+        if (address(_morphoVault) != address(0)) morphoVault = IMorphoVault(_morphoVault);
+
+        emit PoolUpdated(address(aavePool), address(morphoVault));
     }
 
     /**
@@ -118,7 +135,6 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable {
      */
     function depositWithAuthorization(bytes32 _innerCommitment, bytes calldata _receiveAuthorization)
         external
-        payable
         nonReentrant
     {
         // Compute yield index and final commitment on-chain (user cannot fake yield index)
@@ -143,9 +159,12 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable {
 
         // Supply USDC to Morpho and Aave to earn yield (50/50 split)
         uint256 depositSplit = amount / 2;
-        morphoVault.deposit(depositSplit, address(this));
-        aavePool.supply(address(token), depositSplit, address(this), 0);
 
+        token.approve(address(morphoVault), depositSplit);
+        morphoVault.deposit(depositSplit, address(this));
+
+        token.approve(address(aavePool), depositSplit);
+        aavePool.supply(address(token), depositSplit, address(this), 0);
         uint32 insertedIndex = _insert(finalCommitment);
 
         emit DepositWithAuthorization(finalCommitment, insertedIndex, block.timestamp, yieldIndex);
@@ -163,6 +182,9 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable {
         }
         if (!isKnownRoot(_root)) revert PrivacyVault__UnknownRoot({root: _root});
         if (_yieldIndex == 0) revert PrivacyVault__InvalidYieldIndex();
+        if (_recipient == address(0) || _recipient == address(this)) {
+            revert PrivacyVault__InvalidRecipient({expected: address(0), actual: _recipient});
+        }
 
         bytes32[] memory publicInputs = new bytes32[](4);
         publicInputs[0] = _root;

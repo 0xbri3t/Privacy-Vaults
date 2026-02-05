@@ -51,6 +51,10 @@ contract MorphoVaultMock is IMorphoVault, Ownable {
         return (assets * totalShares) / totalAssetsBacking;
     }
 
+    function maxWithdraw(address owner) external view returns (uint256) {
+        return convertToAssets(shareBalances[owner]);
+    }
+
     function totalAssets() external view returns (uint256) {
         return totalAssetsBacking;
     }

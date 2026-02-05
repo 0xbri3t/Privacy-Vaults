@@ -9,4 +9,5 @@ interface IMorphoVault {
     function convertToAssets(uint256 shares) external view returns (uint256 assets);
     function convertToShares(uint256 assets) external view returns (uint256 shares);
     function totalAssets() external view returns (uint256);
+    function maxWithdraw(address owner) external view returns (uint256);
 }

@@ -12,7 +12,7 @@ import { createConfig, WagmiProvider } from 'wagmi'
 
 const wagmiConfig = createConfig(
   getDefaultConfig({
-    appName: 'Privacy Vault',
+    appName: 'Privacy Vaults',
     chains: [baseSepolia, base],
     walletConnectProjectId: import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID,
   }),

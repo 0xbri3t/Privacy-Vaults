@@ -1,7 +1,7 @@
 {
   "name": "privacy-vault-backend",
   "version": "1.0.0",
-  "description": "Backend server for Privacy Vault",
+  "description": "Backend server for Privacy Vaults",
   "main": "dist/server.js",
   "type": "module",
   "scripts": {

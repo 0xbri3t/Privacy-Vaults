@@ -151,7 +151,7 @@ export function ProgressModal({
               {/* Done button */}
               <button
                 onClick={onDone}
-                className="w-full py-3 px-4 rounded-xl bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-hover)] hover:shadow-lg hover:shadow-cyan-500/20 transition-all"
+                className="w-full py-3 px-4 rounded-xl bg-[var(--accent)] text-[var(--bg-deep)] font-semibold hover:bg-[var(--accent-hover)] hover:shadow-lg hover:shadow-cyan-500/20 transition-all"
               >
                 Done
               </button>
@@ -239,7 +239,7 @@ export function ProgressModal({
                   {onRetry && (
                     <button
                       onClick={onRetry}
-                      className="flex-1 py-2.5 px-4 rounded-xl bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-hover)] transition-colors"
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-[var(--accent)] text-[var(--bg-deep)] font-semibold hover:bg-[var(--accent-hover)] transition-colors"
                     >
                       Try Again
                     </button>

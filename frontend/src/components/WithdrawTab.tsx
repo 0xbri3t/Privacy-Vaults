@@ -250,7 +250,7 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
           <button
             onClick={handleWithdraw}
             disabled={isActive || isBridging || !noteInput.trim() || !isRecipientValid}
-            className="w-full py-3.5 px-4 rounded-xl bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-hover)] hover:shadow-lg hover:shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full py-3.5 px-4 rounded-xl bg-[var(--accent)] text-[var(--bg-deep)] font-semibold hover:bg-[var(--accent-hover)] hover:shadow-lg hover:shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Withdraw {selectedVault.label}
           </button>
@@ -303,7 +303,7 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
           </div>
           <button
             onClick={() => bridge(quote)}
-            className="w-full py-3.5 px-4 rounded-xl bg-[var(--accent)] text-white font-semibold hover:bg-[var(--accent-hover)] hover:shadow-lg hover:shadow-cyan-500/20 transition-all"
+            className="w-full py-3.5 px-4 rounded-xl bg-[var(--accent)] text-[var(--bg-deep)] font-semibold hover:bg-[var(--accent-hover)] hover:shadow-lg hover:shadow-cyan-500/20 transition-all"
           >
             Bridge to {selectedChain.name}
           </button>

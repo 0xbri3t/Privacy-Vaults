@@ -98,7 +98,7 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 console.log(`
-  Privacy Vault Server
+  Privacy Vaults Server
   Running on: http://localhost:${env.port}
 `);
 

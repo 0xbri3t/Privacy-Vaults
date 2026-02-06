@@ -4,7 +4,6 @@ import * as THREE from 'three'
 import { DepositStage } from './stages/DepositStage.tsx'
 import { CommitmentStage } from './stages/CommitmentStage.tsx'
 import { MerkleTreeStage } from './stages/MerkleTreeStage.tsx'
-import { ProofStage } from './stages/ProofStage.tsx'
 import { WithdrawStage } from './stages/WithdrawStage.tsx'
 
 interface FlowSceneProps {
@@ -109,7 +108,6 @@ export function FlowScene({ progress }: FlowSceneProps) {
       <DepositStage progress={progress} />
       <CommitmentStage progress={progress} />
       <MerkleTreeStage progress={progress} />
-      <ProofStage progress={progress} />
       <WithdrawStage progress={progress} />
     </>
   )

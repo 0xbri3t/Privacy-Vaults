@@ -388,11 +388,11 @@ export function CommitmentAnimation({ visible }: CommitmentAnimationProps) {
     let phase = PHASE_ORBIT
     let phaseTime = 0
 
-    const ORBIT_DURATION = 40
-    const APPROACH_DURATION = 160
-    const FLASH_DURATION = 25
-    const COMMIT_DURATION = 320
-    const RESET_DURATION = 60
+    const ORBIT_DURATION = 10
+    const APPROACH_DURATION = 120
+    const FLASH_DURATION = 15
+    const COMMIT_DURATION = 50
+    const RESET_DURATION = 20
 
     let time = 0
     const orbStartDist = 2.8
@@ -409,7 +409,7 @@ export function CommitmentAnimation({ visible }: CommitmentAnimationProps) {
 
       // ==================== PHASE LOGIC ====================
       if (phase === PHASE_ORBIT) {
-        orbitAngle += 0.008
+        orbitAngle += 0.03
         const bobY = Math.sin(time * 1.2) * 0.15
 
 
@@ -442,7 +442,7 @@ export function CommitmentAnimation({ visible }: CommitmentAnimationProps) {
         const prog = Math.min(phaseTime / APPROACH_DURATION, 1)
         const ease = Math.pow(prog, 2)
         const dist = orbStartDist * Math.max(0.08, 1 - ease)
-        const angularSpeed = 0.008 + Math.pow(prog, 3.5) * 0.35
+        const angularSpeed = 0.03 + Math.pow(prog, 3.5) * 0.35
         orbitAngle += angularSpeed
         const bobY = Math.sin(time * 1.5) * 0.1 * (1 - ease)
 

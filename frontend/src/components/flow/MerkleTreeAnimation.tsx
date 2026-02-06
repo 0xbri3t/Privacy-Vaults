@@ -102,7 +102,7 @@ export function MerkleTreeAnimation({ visible }: MerkleTreeAnimationProps) {
           emissiveIntensity: isRoot ? 0.4 : 0.2,
           clearcoat: 0.7,
           transparent: true,
-          opacity: isLeaf ? 0.7 : 0.85,
+          opacity: 1,
         })
 
         const nodeMesh = new THREE.Mesh(nodeGeo, nodeMat)
@@ -187,16 +187,6 @@ export function MerkleTreeAnimation({ visible }: MerkleTreeAnimationProps) {
     const commCore = new THREE.Mesh(new THREE.IcosahedronGeometry(0.25, 1), commCoreMat)
     commGroup.add(commCore)
 
-    const commGlowMat = new THREE.MeshBasicMaterial({ color: COL.goldLight, transparent: true, opacity: 0.15 })
-    const commGlow = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), commGlowMat)
-    commGroup.add(commGlow)
-
-    const commGlow2Mat = new THREE.MeshBasicMaterial({ color: COL.secondary, transparent: true, opacity: 0.06 })
-    const commGlow2 = new THREE.Mesh(new THREE.SphereGeometry(0.75, 16, 16), commGlow2Mat)
-    commGroup.add(commGlow2)
-
-    const commLight = new THREE.PointLight(COL.goldLight, 0, 6)
-    commGroup.add(commLight)
     scene.add(commGroup)
 
     // ==================== ENERGY PULSE ====================
@@ -207,16 +197,6 @@ export function MerkleTreeAnimation({ visible }: MerkleTreeAnimationProps) {
     const pulseCore = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), pulseCoreMat)
     pulseGroup.add(pulseCore)
 
-    const pulseGlowMat = new THREE.MeshBasicMaterial({ color: COL.primary, transparent: true, opacity: 0.2 })
-    const pulseGlow = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), pulseGlowMat)
-    pulseGroup.add(pulseGlow)
-
-    const pulseGlow2Mat = new THREE.MeshBasicMaterial({ color: COL.secondary, transparent: true, opacity: 0.08 })
-    const pulseGlow2 = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 16), pulseGlow2Mat)
-    pulseGroup.add(pulseGlow2)
-
-    const pulseLight = new THREE.PointLight(COL.goldLight, 0, 7)
-    pulseGroup.add(pulseLight)
     scene.add(pulseGroup)
 
     // ==================== ROOT FLASH ====================
@@ -295,13 +275,13 @@ export function MerkleTreeAnimation({ visible }: MerkleTreeAnimationProps) {
     let climbStep = 0
     let climbProgress = 0
 
-    const IDLE_DUR = 60
-    const DESCEND_DUR = 100
-    const INSERT_DUR = 30
-    const CLIMB_STEP_DUR = 28
-    const ROOT_FLASH_DUR = 40
-    const GLOW_DUR = 120
-    const RESET_DUR = 50
+    const IDLE_DUR = 40
+    const DESCEND_DUR = 70
+    const INSERT_DUR = 25
+    const CLIMB_STEP_DUR = 22
+    const ROOT_FLASH_DUR = 30
+    const GLOW_DUR = 80
+    const RESET_DUR = 35
 
     let time = 0
 
@@ -343,10 +323,8 @@ export function MerkleTreeAnimation({ visible }: MerkleTreeAnimationProps) {
 
         commCore.rotation.y = time * 2
         commCore.rotation.x = time * 1.2
-        commLight.intensity = 0.8 + 0.3 * Math.sin(time * 3)
 
         commCoreMat.emissiveIntensity = 0.5 + ease * 0.5
-        commGlowMat.opacity = 0.12 + ease * 0.1
 
         if (phaseTime >= DESCEND_DUR) {
           phase = PH_INSERT
@@ -360,16 +338,12 @@ export function MerkleTreeAnimation({ visible }: MerkleTreeAnimationProps) {
 
         const shrink = 1 - prog
         commCore.scale.setScalar(shrink)
-        commGlow.scale.setScalar(shrink)
-        commGlow2.scale.setScalar(shrink)
         commCoreMat.opacity = shrink
-        commGlowMat.opacity = 0.2 * shrink
-        commLight.intensity = 1.5 * shrink
 
         const leaf = treeNodes[targetLeafIdx]
         const leafMat = leaf.mesh.material as THREE.MeshPhysicalMaterial
         leafMat.emissiveIntensity = 0.2 + prog * 0.8
-        leafMat.opacity = 0.7 + prog * 0.3
+        leafMat.opacity = 1
         const leafGlowMat = leaf.glowMesh.material as THREE.MeshBasicMaterial
         leafGlowMat.opacity = prog * 0.08
         leafGlowMat.color.set(COL.goldLight)
@@ -385,8 +359,6 @@ export function MerkleTreeAnimation({ visible }: MerkleTreeAnimationProps) {
           commGroup.visible = false
 
           commCore.scale.setScalar(1)
-          commGlow.scale.setScalar(1)
-          commGlow2.scale.setScalar(1)
           commCoreMat.opacity = 1
 
           pulseGroup.visible = true
@@ -405,7 +377,7 @@ export function MerkleTreeAnimation({ visible }: MerkleTreeAnimationProps) {
           const ease = climbProgress * climbProgress * (3 - 2 * climbProgress)
 
           pulseGroup.position.lerpVectors(fromNode.pos, toNode.pos, ease)
-          pulseLight.intensity = 2.0 + Math.sin(time * 5) * 0.5
+          // pulse travels along the path
 
           const edge = treeEdges.find(e =>
             (e.fromIdx === path[climbStep] && e.toIdx === path[climbStep + 1]) ||
@@ -472,7 +444,6 @@ export function MerkleTreeAnimation({ visible }: MerkleTreeAnimationProps) {
           n.litIntensity *= 0.97
           const nMat = n.mesh.material as THREE.MeshPhysicalMaterial
           nMat.emissiveIntensity = 0.2 + n.litIntensity * 0.7
-          nMat.opacity = (n.isLeaf ? 0.7 : 0.85) + n.litIntensity * 0.15
           const nGlowMat = n.glowMesh.material as THREE.MeshBasicMaterial
           nGlowMat.opacity = n.litIntensity * 0.06
         })
@@ -498,7 +469,7 @@ export function MerkleTreeAnimation({ visible }: MerkleTreeAnimationProps) {
           const nMat = n.mesh.material as THREE.MeshPhysicalMaterial
           nMat.emissiveIntensity = (n.isRoot ? 0.4 : 0.2) + n.litIntensity * 0.3
           nMat.emissive.set(n.baseColor)
-          nMat.opacity = n.isLeaf ? 0.7 : 0.85
+          nMat.opacity = 1
           const nGlowMat = n.glowMesh.material as THREE.MeshBasicMaterial
           nGlowMat.opacity = 0
           nGlowMat.color.set(n.baseColor)
@@ -520,12 +491,7 @@ export function MerkleTreeAnimation({ visible }: MerkleTreeAnimationProps) {
       }
 
       // ==================== ALWAYS-ON ====================
-      treeNodes.forEach((n, i) => {
-        if (!n.lit) {
-          const nMat = n.mesh.material as THREE.MeshPhysicalMaterial
-          const pulse = Math.sin(time * 1.5 + i * 0.4) * 0.02
-          nMat.emissiveIntensity = Math.max(0, nMat.emissiveIntensity + pulse * 0.1)
-        }
+      treeNodes.forEach((n) => {
         if (n.isRoot) {
           n.mesh.rotation.y = time * 0.3
           n.mesh.rotation.x = time * 0.2

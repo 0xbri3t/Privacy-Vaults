@@ -4,6 +4,7 @@ import { Spotlight } from '../components/Spotlight.tsx'
 import { FlipWords } from '../components/FlipWords.tsx'
 import { FlowVisualization } from '../components/flow/FlowVisualization.tsx'
 import { DecryptedText } from '../components/DecryptedText.tsx'
+import { BorrowShowcase } from '../components/BorrowShowcase.tsx'
 
 interface LandingPageProps {
   onLaunch: () => void
@@ -114,6 +115,9 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
         </motion.h2>
         <FlowVisualization />
       </section>
+
+      {/* Borrow Showcase */}
+      <BorrowShowcase />
 
       {/* Features */}
       <section className="relative z-10 py-24 px-6">

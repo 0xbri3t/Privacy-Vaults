@@ -49,6 +49,11 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable, IPriva
     mapping(bytes32 => bool) public s_collateralSpent; // collateralNullifierHash => bool (prevents borrow if deposit already withdrawn)
     uint256 public totalBorrowed; // for monitoring total outstanding debt
 
+    uint256 public s_relayerFeeBps; // fee in basis points (e.g. 50 = 0.5%)
+    address public s_feeRecipient; // receives fees on each withdraw/borrow/repay
+
+    uint256 private constant MAX_FEE_BPS = 500; // 5% cap
+
 
     constructor(
         IVerifier _verifier,
@@ -83,6 +88,8 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable, IPriva
 
         // Record Morpho share price at deployment to compute normalized growth
         initialMorphoSharePrice = _morphoVault.convertToAssets(ONE_SHARE);
+
+        s_feeRecipient = msg.sender;
     }
 
     // Trusted function to update strategy addresses in case of upgrades or emergencies.
@@ -101,6 +108,18 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable, IPriva
         if (address(_morphoVault) != address(0)) morphoVault = IMorphoVault(_morphoVault);
 
         emit PoolUpdated(address(aavePool), address(morphoVault));
+    }
+
+    function setRelayerFee(uint256 _feeBps) external onlyOwner {
+        if (_feeBps > MAX_FEE_BPS) revert PrivacyVault__FeeTooHigh(_feeBps, MAX_FEE_BPS);
+        s_relayerFeeBps = _feeBps;
+        emit FeeUpdated(_feeBps);
+    }
+
+    function setFeeRecipient(address _feeRecipient) external onlyOwner {
+        if (_feeRecipient == address(0)) revert PrivacyVault__InvalidFeeRecipient();
+        s_feeRecipient = _feeRecipient;
+        emit FeeRecipientUpdated(_feeRecipient);
     }
 
     /**
@@ -217,22 +236,30 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable, IPriva
         s_nullifierHashes[_nullifierHash] = true;
 
         // Calculate yield-adjusted payout using blended index (Aave + Morpho)
-        uint256 currentAaveIndex = aavePool.getReserveNormalizedIncome(address(token)); // e.g. 1.05e27 for 5% yield
+        uint256 currentAaveIndex = aavePool.getReserveNormalizedIncome(address(token));
         uint256 currentMorphoIndex = getMorphoNormalizedIncome();
-        uint256 currentBlended = (currentAaveIndex + currentMorphoIndex) / 2; // e.g. 1.04e27 if Morpho has slightly lower yield
-        uint256 payout = (DENOMINATION * currentBlended) / _yieldIndex; // adjust payout based on yield growth since deposit (e.g. 1.04 * DENOMINATION if blended yield is 4%)
+        uint256 currentBlended = (currentAaveIndex + currentMorphoIndex) / 2;
+        uint256 payout = (DENOMINATION * currentBlended) / _yieldIndex;
+
+        uint256 fee;
+        if (s_relayerFeeBps > 0) {
+            fee = (payout * s_relayerFeeBps) / BPS;
+        }
 
         // Withdraw proportionally to each protocol's current share of the yield.
-        // Since every deposit puts DENOMINATION/2 into each protocol, their
-        // current value is proportional to their respective index.
-        uint256 totalIndex = currentAaveIndex + currentMorphoIndex; // e.g. 2.09e27
-        uint256 aaveWithdraw = (payout * currentAaveIndex) / totalIndex; // e.g. if Aave has 60% of the yield, withdraw 60% of payout from Aave
-        uint256 morphoWithdraw = payout - aaveWithdraw; // withdraw the rest from Morpho
+        uint256 totalIndex = currentAaveIndex + currentMorphoIndex;
+        uint256 aaveWithdraw = (payout * currentAaveIndex) / totalIndex;
+        uint256 morphoWithdraw = payout - aaveWithdraw;
 
-        morphoVault.withdraw(morphoWithdraw, _recipient, address(this));
-        aavePool.withdraw(address(token), aaveWithdraw, _recipient);
+        morphoVault.withdraw(morphoWithdraw, address(this), address(this));
+        aavePool.withdraw(address(token), aaveWithdraw, address(this));
 
-        emit Withdrawal(_recipient, _nullifierHash, payout);
+        token.safeTransfer(_recipient, payout - fee);
+        if (fee > 0) {
+            token.safeTransfer(s_feeRecipient, fee);
+        }
+
+        emit Withdrawal(_recipient, _nullifierHash, payout - fee);
     }
 
     function borrow(
@@ -284,14 +311,24 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable, IPriva
         totalBorrowed += _borrowAmount;
 
         // 7. Withdraw from Aave/Morpho proportionally, send to recipient
-        uint256 currentAaveIndex = aavePool.getReserveNormalizedIncome(address(token)); // e.g. 1.05e27 for 5% yield
-        uint256 currentMorphoIndex = getMorphoNormalizedIncome(); // e.g. 1.03e27 for 3% yield
-        uint256 totalIndex = currentAaveIndex + currentMorphoIndex; // e.g. 2.08e27
-        uint256 aaveAmt = (_borrowAmount * currentAaveIndex) / totalIndex; // e.g. if Aave has 60% of the yield, borrow 60% of amount from Aave
-        uint256 morphoAmt = _borrowAmount - aaveAmt; // borrow the rest from Morpho
+        uint256 fee;
+        if (s_relayerFeeBps > 0) {
+            fee = (_borrowAmount * s_relayerFeeBps) / BPS;
+        }
 
-        morphoVault.withdraw(morphoAmt, _recipient, address(this));
-        aavePool.withdraw(address(token), aaveAmt, _recipient);
+        uint256 currentAaveIndex = aavePool.getReserveNormalizedIncome(address(token));
+        uint256 currentMorphoIndex = getMorphoNormalizedIncome();
+        uint256 totalIndex = currentAaveIndex + currentMorphoIndex;
+        uint256 aaveAmt = (_borrowAmount * currentAaveIndex) / totalIndex;
+        uint256 morphoAmt = _borrowAmount - aaveAmt;
+
+        morphoVault.withdraw(morphoAmt, address(this), address(this));
+        aavePool.withdraw(address(token), aaveAmt, address(this));
+
+        token.safeTransfer(_recipient, _borrowAmount - fee);
+        if (fee > 0) {
+            token.safeTransfer(s_feeRecipient, fee);
+        }
 
         emit Borrow(_collateralNullifierHash, _recipient, _borrowAmount, currentBlended);
     }
@@ -304,6 +341,12 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable, IPriva
         return (loan.principalAmount * currentBlended) / loan.borrowYieldIndex;
     }
 
+    function getRepaymentAmount(bytes32 _collateralNullifierHash) external view returns (uint256) {
+        uint256 debt = getDebt(_collateralNullifierHash);
+        uint256 fee = (debt * s_relayerFeeBps) / BPS;
+        return debt + fee;
+    }
+
     function repayWithAuthorization(bytes32 _collateralNullifierHash, bytes calldata _receiveAuthorization)
         external
         nonReentrant
@@ -312,11 +355,16 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable, IPriva
         if (!loan.active) revert PrivacyVault__NoActiveLoan({collateralNullifierHash: _collateralNullifierHash});
 
         uint256 debt = getDebt(_collateralNullifierHash);
+        uint256 fee;
+        if (s_relayerFeeBps > 0) {
+            fee = (debt * s_relayerFeeBps) / BPS;
+        }
+        uint256 totalRequired = debt + fee;
 
-        // Validate EIP-3009 authorization matches debt amount
+        // Validate EIP-3009 authorization matches debt + fee amount
         (address from, address to, uint256 amount) =
             abi.decode(_receiveAuthorization[0:96], (address, address, uint256));
-        require(amount >= debt, "Insufficient repayment");
+        require(amount >= totalRequired, "Insufficient repayment");
         require(to == address(this), "Wrong recipient");
 
         // Receive USDC via EIP-3009
@@ -324,12 +372,17 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable, IPriva
             address(token).call(abi.encodePacked(_RECEIVE_WITH_AUTHORIZATION_SELECTOR, _receiveAuthorization));
         require(success, "Transfer failed");
 
-        // Re-deposit into Aave/Morpho (50/50)
+        // Re-deposit debt into Aave/Morpho (50/50)
         uint256 split = debt / 2;
         token.approve(address(morphoVault), split);
         morphoVault.deposit(split, address(this));
         token.approve(address(aavePool), debt - split);
         aavePool.supply(address(token), debt - split, address(this), 0);
+
+        // Send fee to feeRecipient
+        if (fee > 0) {
+            token.safeTransfer(s_feeRecipient, fee);
+        }
 
         // Clear loan
         loan.active = false;

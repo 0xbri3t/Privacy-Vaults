@@ -18,6 +18,8 @@ interface IPrivacyVault {
     event PoolUpdated(address newAavePool, address newMorphoVault);
     event Borrow(bytes32 indexed collateralNullifierHash, address borrower, uint256 amount, uint256 yieldIndex);
     event Repay(bytes32 indexed collateralNullifierHash, address repayer, uint256 amount);
+    event FeeUpdated(uint256 newFeeBps);
+    event FeeRecipientUpdated(address newFeeRecipient);
 
     // ---- Errors ----
     error PrivacyVault__DepositValueMismatch(uint256 expected, uint256 actual);
@@ -35,6 +37,8 @@ interface IPrivacyVault {
     error PrivacyVault__InvalidBorrowProof();
     error PrivacyVault__BorrowAmountExceedsLTV(uint256 maxBorrow, uint256 requested);
     error PrivacyVault__DepositAlreadyWithdrawn(bytes32 collateralNullifierHash);
+    error PrivacyVault__FeeTooHigh(uint256 feeBps, uint256 maxFeeBps);
+    error PrivacyVault__InvalidFeeRecipient();
 
     // ---- View / Pure ----
     function token() external view returns (IERC20);
@@ -53,9 +57,14 @@ interface IPrivacyVault {
     function getMorphoNormalizedIncome() external view returns (uint256);
     function getCurrentBucketedYieldIndex() external view returns (uint256);
     function getDebt(bytes32 _collateralNullifierHash) external view returns (uint256);
+    function s_relayerFeeBps() external view returns (uint256);
+    function s_feeRecipient() external view returns (address);
+    function getRepaymentAmount(bytes32 _collateralNullifierHash) external view returns (uint256);
 
     // ---- State-changing ----
     function setPools(address _aavePool, address _morphoVault) external;
+    function setRelayerFee(uint256 _feeBps) external;
+    function setFeeRecipient(address _feeRecipient) external;
 
     function depositWithAuthorization(bytes32 _innerCommitment, bytes calldata _receiveAuthorization) external;
 

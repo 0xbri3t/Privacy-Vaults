@@ -93,6 +93,106 @@ contract PrivacyVaultTest is TestBase {
         );
     }
 
+    function test_setRelayerFee_onlyOwner() public {
+        // Owner can set fee
+        privacyVault.setRelayerFee(50);
+        assertEq(privacyVault.s_relayerFeeBps(), 50);
+
+        // Non-owner reverts
+        vm.prank(depositor);
+        vm.expectRevert();
+        privacyVault.setRelayerFee(50);
+    }
+
+    function test_setRelayerFee_exceedsMax() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(IPrivacyVault.PrivacyVault__FeeTooHigh.selector, 501, 500)
+        );
+        privacyVault.setRelayerFee(501);
+    }
+
+    function test_setFeeRecipient_onlyOwner() public {
+        address newRecipient = makeAddr("feeRecipient");
+        privacyVault.setFeeRecipient(newRecipient);
+        assertEq(privacyVault.s_feeRecipient(), newRecipient);
+
+        // Non-owner reverts
+        vm.prank(depositor);
+        vm.expectRevert();
+        privacyVault.setFeeRecipient(newRecipient);
+    }
+
+    function test_setFeeRecipient_rejectsZero() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(IPrivacyVault.PrivacyVault__InvalidFeeRecipient.selector)
+        );
+        privacyVault.setFeeRecipient(address(0));
+    }
+
+    function test_withdrawWithFee() public {
+        // Set 0.5% fee
+        address feeRecipient = makeAddr("feeRecipient");
+        privacyVault.setFeeRecipient(feeRecipient);
+        privacyVault.setRelayerFee(50);
+
+        // Deposit
+        (bytes32 _commitment, bytes32 _nullifier, bytes32 _secret) = _getCommitment();
+        bytes memory signature = _getSignature(depositor);
+        uint256 yieldIndex = privacyVault.getCurrentBucketedYieldIndex();
+        bytes32 finalCommitment = privacyVault.hashLeftRight(_commitment, bytes32(yieldIndex));
+        vm.prank(depositor);
+        privacyVault.depositWithAuthorization(_commitment, signature);
+
+        // Withdraw
+        bytes32[] memory leaves = new bytes32[](1);
+        leaves[0] = finalCommitment;
+        (bytes memory _proof, bytes32[] memory _publicInputs) =
+            _getProof(_nullifier, _secret, recipient, bytes32(yieldIndex), leaves, false);
+
+        assertEq(usdc.balanceOf(recipient), 0);
+        assertEq(usdc.balanceOf(feeRecipient), 0);
+
+        privacyVault.withdraw(
+            _proof,
+            _publicInputs[0],
+            _publicInputs[1],
+            _publicInputs[2],
+            payable(address(uint160(uint256(_publicInputs[3])))),
+            uint256(_publicInputs[4])
+        );
+
+        uint256 expectedPayout = privacyVault.DENOMINATION();
+        uint256 expectedFee = (expectedPayout * 50) / 10000;
+        assertEq(usdc.balanceOf(feeRecipient), expectedFee, "Fee recipient should receive fee");
+        assertEq(usdc.balanceOf(recipient), expectedPayout - expectedFee, "Recipient should receive payout minus fee");
+    }
+
+    function test_withdrawWithZeroFee() public {
+        // No fee set (default = 0)
+        (bytes32 _commitment, bytes32 _nullifier, bytes32 _secret) = _getCommitment();
+        bytes memory signature = _getSignature(depositor);
+        uint256 yieldIndex = privacyVault.getCurrentBucketedYieldIndex();
+        bytes32 finalCommitment = privacyVault.hashLeftRight(_commitment, bytes32(yieldIndex));
+        vm.prank(depositor);
+        privacyVault.depositWithAuthorization(_commitment, signature);
+
+        bytes32[] memory leaves = new bytes32[](1);
+        leaves[0] = finalCommitment;
+        (bytes memory _proof, bytes32[] memory _publicInputs) =
+            _getProof(_nullifier, _secret, recipient, bytes32(yieldIndex), leaves, false);
+
+        privacyVault.withdraw(
+            _proof,
+            _publicInputs[0],
+            _publicInputs[1],
+            _publicInputs[2],
+            payable(address(uint160(uint256(_publicInputs[3])))),
+            uint256(_publicInputs[4])
+        );
+
+        assertEq(usdc.balanceOf(recipient), privacyVault.DENOMINATION(), "Recipient should receive full payout with zero fee");
+    }
+
     function test_withdrawWithYieldBuckets() public {
         // make a deposit
         (bytes32 _commitment, bytes32 _nullifier, bytes32 _secret) = _getCommitment();

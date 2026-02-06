@@ -290,6 +290,118 @@ contract PrivacyVaultBorrowTest is TestBase {
         assertApproxEqRel(debt, expectedDebt, 0.02e18, "Debt should track blended yield");
     }
 
+    function test_borrowWithFee() public {
+        // Set 0.5% fee
+        address feeRecipient = makeAddr("feeRecipient");
+        privacyVault.setFeeRecipient(feeRecipient);
+        privacyVault.setRelayerFee(50);
+
+        (bytes32 commitment, bytes32 nullifier, bytes32 secret) = _getCommitment();
+        (bytes32 finalCommitment, bytes32 collateralHash) =
+            _deposit(nullifier, secret, depositor, address(privacyVault));
+        uint256 yieldIndex = privacyVault.getCurrentBucketedYieldIndex();
+        uint256 borrowAmount = 50e6;
+
+        bytes32[] memory leaves = new bytes32[](1);
+        leaves[0] = finalCommitment;
+        (bytes memory proof, bytes32[] memory publicInputs) =
+            _getProof(nullifier, secret, recipient, bytes32(yieldIndex), leaves, true);
+
+        uint256 recipientBefore = usdc.balanceOf(recipient);
+
+        privacyVault.borrow(
+            proof,
+            publicInputs[0],
+            publicInputs[1],
+            payable(address(uint160(uint256(publicInputs[2])))),
+            uint256(publicInputs[3]),
+            borrowAmount
+        );
+
+        uint256 expectedFee = (borrowAmount * 50) / 10000;
+        assertEq(usdc.balanceOf(recipient) - recipientBefore, borrowAmount - expectedFee, "Recipient gets amount minus fee");
+        assertEq(usdc.balanceOf(feeRecipient), expectedFee, "Fee recipient gets fee");
+
+        // Loan principal should record full borrow amount
+        (uint256 principal,,, bool active) = privacyVault.s_loans(collateralHash);
+        assertTrue(active);
+        assertEq(principal, borrowAmount, "Principal should be full borrow amount");
+    }
+
+    function test_repayWithFee() public {
+        // Set 0.5% fee
+        address feeRecipient = makeAddr("feeRecipient");
+        privacyVault.setFeeRecipient(feeRecipient);
+        privacyVault.setRelayerFee(50);
+
+        (, bytes32 nullifier, bytes32 secret) = _getCommitment();
+        (bytes32 finalCommitment, bytes32 collateralHash) =
+            _deposit(nullifier, secret, depositor, address(privacyVault));
+
+        {
+            uint256 yieldIndex = privacyVault.getCurrentBucketedYieldIndex();
+            bytes32[] memory leaves = new bytes32[](1);
+            leaves[0] = finalCommitment;
+            (bytes memory proof, bytes32[] memory publicInputs) =
+                _getProof(nullifier, secret, recipient, bytes32(yieldIndex), leaves, true);
+
+            privacyVault.borrow(
+                proof,
+                publicInputs[0],
+                publicInputs[1],
+                payable(address(uint160(uint256(publicInputs[2])))),
+                uint256(publicInputs[3]),
+                50e6
+            );
+        }
+
+        // Repay with fee
+        uint256 debt = privacyVault.getDebt(collateralHash);
+        uint256 repaymentAmount = privacyVault.getRepaymentAmount(collateralHash);
+        uint256 expectedFee = (debt * 50) / 10000;
+        assertEq(repaymentAmount, debt + expectedFee, "Repayment amount should be debt + fee");
+
+        uint256 feeRecipientBefore = usdc.balanceOf(feeRecipient);
+        bytes memory repaySig = _getRepaySignature(depositor, repaymentAmount);
+        privacyVault.repayWithAuthorization(collateralHash, repaySig);
+
+        assertEq(usdc.balanceOf(feeRecipient) - feeRecipientBefore, expectedFee, "Fee recipient should receive repay fee");
+        (,,, bool active) = privacyVault.s_loans(collateralHash);
+        assertFalse(active, "Loan should be cleared");
+    }
+
+    function test_repayInsufficientWithFee() public {
+        // Set 0.5% fee
+        privacyVault.setRelayerFee(50);
+
+        (, bytes32 nullifier, bytes32 secret) = _getCommitment();
+        (bytes32 finalCommitment, bytes32 collateralHash) =
+            _deposit(nullifier, secret, depositor, address(privacyVault));
+
+        {
+            uint256 yieldIndex = privacyVault.getCurrentBucketedYieldIndex();
+            bytes32[] memory leaves = new bytes32[](1);
+            leaves[0] = finalCommitment;
+            (bytes memory proof, bytes32[] memory publicInputs) =
+                _getProof(nullifier, secret, recipient, bytes32(yieldIndex), leaves, true);
+
+            privacyVault.borrow(
+                proof,
+                publicInputs[0],
+                publicInputs[1],
+                payable(address(uint160(uint256(publicInputs[2])))),
+                uint256(publicInputs[3]),
+                50e6
+            );
+        }
+
+        // Try to repay with just debt (no fee) — should revert
+        uint256 debt = privacyVault.getDebt(collateralHash);
+        bytes memory repaySig = _getRepaySignature(depositor, debt);
+        vm.expectRevert("Insufficient repayment");
+        privacyVault.repayWithAuthorization(collateralHash, repaySig);
+    }
+
     function test_multiple_borrows_different_deposits() public {
         // Deposit 1
         (bytes32 commitment1, bytes32 nullifier1, bytes32 secret1) = _getCommitment();

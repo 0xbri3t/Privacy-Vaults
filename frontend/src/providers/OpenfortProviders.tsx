@@ -14,6 +14,7 @@ const wagmiConfig = createConfig(
   getDefaultConfig({
     appName: 'Privacy Vaults',
     chains: [baseSepolia, base],
+    ssr: true,
     walletConnectProjectId: import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID,
   }),
 )
@@ -24,7 +25,6 @@ export function OpenfortProviders({ children }: { children: React.ReactNode }) {
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <OpenfortProvider
-          debugMode
           publishableKey={import.meta.env.VITE_OPENFORT_PUBLISHABLE_KEY!}
           walletConfig={{
             shieldPublishableKey: import.meta.env.VITE_OPENFORT_SHIELD_PUBLISHABLE_KEY!,

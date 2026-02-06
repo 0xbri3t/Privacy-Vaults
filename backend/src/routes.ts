@@ -304,3 +304,56 @@ export async function handleYieldIndex(
     });
   }
 }
+
+/**
+ * Claims testnet USDC from Circle's faucet for Base Sepolia
+ * Rate limited: 10 requests per developer account per 24 hours (Circle's limit)
+ */
+export async function handleFaucetClaim(
+  req: Request,
+  res: Response,
+  vaultConfig: Config["vault"]
+): Promise<void> {
+  try {
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+
+    if (!isValidAddress(body?.address)) {
+      res.status(400).json({ success: false, error: "Invalid address" });
+      return;
+    }
+
+    if (!vaultConfig.circleApiKey) {
+      res.status(500).json({ success: false, error: "Faucet not configured" });
+      return;
+    }
+
+    const response = await fetch("https://api.circle.com/v1/faucet/drips", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer TEST_API_KEY:${vaultConfig.circleApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        address: body.address,
+        blockchain: "BASE-SEPOLIA",
+        usdc: true,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("Circle faucet error:", data);
+      res.status(response.status).json({
+        success: false,
+        error: data.message || "Faucet request failed",
+      });
+      return;
+    }
+
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Faucet claim error:", error instanceof Error ? error.message : "Unknown error");
+    res.status(500).json({ success: false, error: "Internal server error" });
+  }
+}

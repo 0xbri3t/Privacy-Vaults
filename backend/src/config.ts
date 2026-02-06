@@ -2,6 +2,7 @@ interface VaultConfig {
   usdcAddress: string;
   chainId: number;
   relayerPrivateKey: string;
+  circleApiKey: string;
 }
 
 interface ShieldConfig {
@@ -41,6 +42,7 @@ export function loadConfig(): Config {
       usdcAddress: process.env.USDC_ADDRESS ?? "0x0000000000000000000000000000000000000000",
       chainId: toNumber(process.env.CHAIN_ID) ?? 84532,
       relayerPrivateKey: process.env.RELAYER_PRIVATE_KEY ?? "",
+      circleApiKey: process.env.TEST_API_KEY ?? "",
     },
     openfort: {
       secretKey: process.env.OPENFORT_SECRET_KEY ?? "",

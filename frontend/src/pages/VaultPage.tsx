@@ -7,13 +7,14 @@ import { DepositTab } from '../components/DepositTab.tsx'
 import { SidebarMenu } from '../components/SidebarMenu.tsx'
 import { StatsPanel } from '../components/StatsPanel.tsx'
 
-import { useUser, useWallets, OpenfortButton } from "@openfort/react";
+import { useUser, OpenfortButton } from "@openfort/react";
 import { useAccount, useSwitchChain } from "wagmi";
 import { createPublicClient, http } from "viem";
 import { baseSepolia, base } from "viem/chains";
 import { NETWORK_CONFIGS, type VaultConfig } from '../contracts/addresses.ts'
 import { useNetworkConfig } from '../hooks/useNetworkConfig.ts'
 import { useNetworkMode, type NetworkMode } from '../contexts/NetworkModeContext.tsx'
+import { useFaucetClaim } from '../hooks/useFaucetClaim.ts'
 
 // Get initial vault based on stored network mode
 function getInitialVault(): VaultConfig {
@@ -38,9 +39,11 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
     const { address, isConnected, chainId } = useAccount();
     const { switchChainAsync } = useSwitchChain();
     const { isAuthenticated } = useUser();
-    const { wallets, isLoadingWallets, setActiveWallet, isConnecting } = useWallets();
     const networkConfig = useNetworkConfig()
     const { mode, isMainnet } = useNetworkMode()
+
+    // Silent auto-claim from Circle faucet on testnet
+    useFaucetClaim(address, !isMainnet)
 
     const [tab, setTab] = useState<Tab>('deposit')
     const [selectedVault, setSelectedVault] = useState<VaultConfig>(getInitialVault)
@@ -62,13 +65,6 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
         const defaultVault = networkConfig.vaults.find((v) => v.enabled) ?? networkConfig.vaults[0]
         setSelectedVault(defaultVault)
     }, [networkConfig])
-
-    // Auto-select wallet when there's exactly one and wagmi isn't connected yet
-    useEffect(() => {
-        if (isAuthenticated && !isConnected && !isConnecting && !isLoadingWallets && wallets.length === 1) {
-            setActiveWallet(wallets[0].id)
-        }
-    }, [isAuthenticated, isConnected, isConnecting, isLoadingWallets, wallets, setActiveWallet])
 
     // Auto-switch to correct chain when connected on wrong chain
     useEffect(() => {
@@ -119,16 +115,6 @@ export function VaultPage({ onBack }: { onBack: () => void }) {
                     </button>
                 </div>
             </div>
-
-            {/* Loading wallet state */}
-            {isAuthenticated && (isLoadingWallets || isConnecting) && (
-                <div className="relative z-10 max-w-5xl mx-auto px-4 pb-4">
-                    <div className="glass-card rounded-xl p-4 flex items-center gap-3">
-                        <span className="inline-block w-4 h-4 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
-                        <p className="text-sm text-[var(--text-secondary)]">Setting up your wallet...</p>
-                    </div>
-                </div>
-            )}
 
             {/* Main content — two-card layout */}
             <div className="relative z-10 max-w-5xl mx-auto px-4 pb-8 flex flex-col lg:flex-row gap-6">

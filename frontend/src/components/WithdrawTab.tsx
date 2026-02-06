@@ -172,14 +172,22 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
                 </div>
               )}
               {!preview.isLoading && preview.received && (
-                <div className="mt-2 pt-2 border-t border-[var(--border-primary)] flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-[var(--text-muted)]">You receive</p>
-                    <p className="text-sm font-semibold text-[var(--accent)]">{preview.received}</p>
+                <div className="mt-2 pt-2 border-t border-[var(--border-primary)] space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[var(--text-muted)]">Deposited</span>
+                    <span className="text-xs font-medium text-[var(--text-primary)]">{selectedVault.displayAmount.toFixed(2)} USDC</span>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-[var(--text-muted)]">Fee ({(preview.feeBps / 100).toFixed(1)}%)</p>
-                    <p className="text-sm font-medium text-[var(--text-secondary)]">{preview.fee}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[var(--text-muted)]">Yield</span>
+                    <span className={`text-xs font-medium ${preview.hasYield ? 'text-emerald-400' : 'text-[var(--text-secondary)]'}`}>{preview.yield}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[var(--text-muted)]">Fee ({(preview.feeBps / 100).toFixed(2)}%)</span>
+                    <span className="text-xs font-medium text-[var(--text-secondary)]">-{preview.fee}</span>
+                  </div>
+                  <div className="border-t border-[var(--border-primary)] pt-1.5 flex items-center justify-between">
+                    <span className="text-xs font-medium text-[var(--text-primary)]">You receive</span>
+                    <span className="text-sm font-semibold text-[var(--accent)]">{preview.received}</span>
                   </div>
                 </div>
               )}

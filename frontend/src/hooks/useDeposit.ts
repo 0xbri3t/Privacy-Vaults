@@ -37,10 +37,16 @@ interface useDepositProps {
   isConnected?: boolean
   vaultAddress: `0x${string}`
   denomination: bigint
+  displayAmount: number
   networkConfig: NetworkConfig
 }
 
-export function useDeposit({ address, isConnected, vaultAddress, denomination, networkConfig }: useDepositProps) {
+const chainIdToNetwork: Record<number, string> = {
+  8453: 'base',
+  84532: 'base_sepolia',
+}
+
+export function useDeposit({ address, isConnected, vaultAddress, denomination, displayAmount, networkConfig }: useDepositProps) {
   const [state, setState] = useState<DepositState>({
     step: 'idle',
     note: null,
@@ -167,13 +173,14 @@ export function useDeposit({ address, isConnected, vaultAddress, denomination, n
         throw new Error('Could not read yieldIndex from deposit event')
       }
 
-      const note = encodeNote(commitment.commitment, commitment.nullifier, commitment.secret, yieldIndexBytes)
+      const network = chainIdToNetwork[networkConfig.chainId] ?? `chain_${networkConfig.chainId}`
+      const note = encodeNote(commitment.commitment, commitment.nullifier, commitment.secret, yieldIndexBytes, 'usdc', displayAmount, network)
       setState({ step: 'done', note, txHash: data.transactionHash, error: null })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
       setState((s) => ({ ...s, step: 'error', error: message }))
     }
-  }, [signTypedDataAsync, isConnected, address, vaultAddress, denomination, networkConfig])
+  }, [signTypedDataAsync, isConnected, address, vaultAddress, denomination, displayAmount, networkConfig])
 
   const reset = useCallback(() => {
     setState({ step: 'idle', note: null, txHash: null, error: null })

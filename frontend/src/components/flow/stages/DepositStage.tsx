@@ -697,7 +697,7 @@ export function DepositStage({ progress }: StageProps) {
         USER
       </Text>
       <Text position={[POOL_POS.x, -1.8, POOL_POS.z]} fontSize={0.4} color="#00e5cc" anchorX="center" fillOpacity={0.8 * opacity}>
-        PRIVACY POOL
+        PRIVACY VAULT
       </Text>
       <Text position={[GEAR_POS.x, -1.5, GEAR_POS.z]} fontSize={0.4} color="#00e5cc" anchorX="center" fillOpacity={0.8 * opacity}>
         YIELD ENGINE

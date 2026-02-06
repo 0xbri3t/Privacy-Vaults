@@ -32,7 +32,15 @@ export function useLoanInfo(noteInput: string, vaultAddress: string) {
 
   useEffect(() => {
     const trimmed = noteInput.trim()
-    if (!trimmed || trimmed.length !== 258) {
+    if (!trimmed) {
+      setInfo({ debt: '0', fee: '0', repaymentAmount: '0', loan: null, collateralNullifierHash: null, isLoading: false, error: null })
+      return
+    }
+
+    let decoded: ReturnType<typeof decodeNote>
+    try {
+      decoded = decodeNote(trimmed)
+    } catch {
       setInfo({ debt: '0', fee: '0', repaymentAmount: '0', loan: null, collateralNullifierHash: null, isLoading: false, error: null })
       return
     }
@@ -42,7 +50,7 @@ export function useLoanInfo(noteInput: string, vaultAddress: string) {
     async function fetchLoan() {
       setInfo((s) => ({ ...s, isLoading: true, error: null }))
       try {
-        const { nullifier } = decodeNote(trimmed)
+        const { nullifier } = decoded
         const collateralNullifierHash = await computeCollateralNullifierHash(nullifier)
 
         const res = await fetch(

@@ -7,23 +7,71 @@ export interface Note {
   yieldIndex: Uint8Array
 }
 
-/** Encode note as 128-byte hex: 0x + commitment(64) + nullifier(64) + secret(64) + yieldIndex(64) */
+export interface NotePrefix {
+  currency: string
+  amount: number
+  network: string
+}
+
+/** Encode note as: privacyvaults-{currency}-{amount}-{network}-{hexData} */
 export function encodeNote(
   commitment: Uint8Array,
   nullifier: Uint8Array,
   secret: Uint8Array,
   yieldIndex: Uint8Array,
+  currency: string,
+  amount: number,
+  network: string,
 ): string {
   const commitmentHex = bytesToHex(commitment).slice(2)
   const nullifierHex = bytesToHex(nullifier).slice(2)
   const secretHex = bytesToHex(secret).slice(2)
   const yieldIndexHex = bytesToHex(yieldIndex).slice(2)
-  return '0x' + commitmentHex + nullifierHex + secretHex + yieldIndexHex
+  const hexData = commitmentHex + nullifierHex + secretHex + yieldIndexHex
+  return `privacyvaults-${currency}-${amount}-${network}-${hexData}`
 }
 
-/** Decode 128-byte hex note → { commitment, nullifier, secret, yieldIndex } */
-export function decodeNote(hex: string): Note {
-  const h = hex.startsWith('0x') ? hex.slice(2) : hex
+/** Parse prefix metadata from a note string. Returns null for legacy (0x) format. */
+export function parseNotePrefix(note: string): NotePrefix | null {
+  if (note.startsWith('0x')) return null
+  if (!note.startsWith('privacyvaults-')) return null
+  const parts = note.split('-')
+  // privacyvaults-currency-amount-network_part-hex...
+  // The network can contain underscores (e.g. base_sepolia) but not dashes,
+  // so parts[1]=currency, parts[2]=amount, parts[3]=network, parts[4+]=hex
+  if (parts.length < 5) return null
+  return {
+    currency: parts[1],
+    amount: Number(parts[2]),
+    network: parts[3],
+  }
+}
+
+/** Extract raw hex data (256 chars) from a note string (supports both formats). */
+function extractHexData(note: string): string {
+  if (note.startsWith('0x')) {
+    return note.slice(2)
+  }
+  // New format: everything after the 4th dash is hex data
+  const idx = nthIndexOf(note, '-', 4)
+  if (idx === -1) throw new Error('Invalid note format')
+  return note.slice(idx + 1)
+}
+
+function nthIndexOf(str: string, char: string, n: number): number {
+  let count = 0
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === char) {
+      count++
+      if (count === n) return i
+    }
+  }
+  return -1
+}
+
+/** Decode note → { commitment, nullifier, secret, yieldIndex }. Supports both legacy (0x...) and new (privacyvaults-...) formats. */
+export function decodeNote(note: string): Note {
+  const h = extractHexData(note)
   if (h.length !== 256) {
     throw new Error(`Invalid note length: expected 256 hex chars, got ${h.length}`)
   }

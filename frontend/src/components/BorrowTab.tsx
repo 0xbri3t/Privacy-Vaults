@@ -5,6 +5,8 @@ import { useBorrow } from '../hooks/useBorrow.ts'
 import { useRepay } from '../hooks/useRepay.ts'
 import { useLoanInfo } from '../hooks/useLoanInfo.ts'
 import { useNoteMetadata } from '../hooks/useNoteMetadata.ts'
+import { useYieldApy } from '../hooks/useYieldApy.ts'
+import { decodeNote } from '../zk/note.ts'
 import { ProgressModal } from './ProgressModal.tsx'
 import type { VaultConfig, NetworkConfig } from '../contracts/addresses.ts'
 
@@ -33,6 +35,7 @@ export function BorrowTab({ selectedVault, networkConfig }: { selectedVault: Vau
   const { step: repayStep, txHash: repayTxHash, error: repayError, repay, reset: repayReset } = useRepay(selectedVault.address, networkConfig)
   const loanInfo = useLoanInfo(noteInput, selectedVault.address)
   const noteMetadata = useNoteMetadata(noteInput, selectedVault.address, Number(selectedVault.denomination), selectedVault.displayAmount)
+  const { blendedApy } = useYieldApy(networkConfig.yieldPools)
   const maxBorrow = (selectedVault.displayAmount * LTV_BPS) / BPS
   const borrowAmount = (maxBorrow * borrowPercent) / 100
   const borrowAmountRaw = BigInt(Math.floor((Number(selectedVault.denomination) * LTV_BPS * borrowPercent) / (BPS * 100)))
@@ -40,6 +43,9 @@ export function BorrowTab({ selectedVault, networkConfig }: { selectedVault: Vau
   const isBorrowActive = borrowStep !== 'idle' && borrowStep !== 'done' && borrowStep !== 'error'
   const isRepayActive = repayStep !== 'idle' && repayStep !== 'done' && repayStep !== 'error'
   const hasActiveLoan = loanInfo.loan?.active === true
+
+  let isNoteValid = false
+  try { decodeNote(noteInput.trim()); isNoteValid = true } catch { /* invalid */ }
 
   // Clear form on successful borrow
   useEffect(() => {
@@ -70,8 +76,13 @@ export function BorrowTab({ selectedVault, networkConfig }: { selectedVault: Vau
     repay(noteInput.trim(), address)
   }
 
+  const principal = loanInfo.loan ? Number(loanInfo.loan.principalAmount) : 0
+  const debt = Number(loanInfo.debt)
+  const interestAmount = debt > principal ? debt - principal : 0
+  const interestPercent = principal > 0 ? ((debt / principal) - 1) * 100 : 0
+
   const debtDisplay = loanInfo.debt !== '0'
-    ? (Number(loanInfo.debt) / 1e6).toFixed(2)
+    ? (debt / 1e6).toFixed(2)
     : '0.00'
   const feeDisplay = loanInfo.fee !== '0'
     ? (Number(loanInfo.fee) / 1e6).toFixed(2)
@@ -104,7 +115,6 @@ export function BorrowTab({ selectedVault, networkConfig }: { selectedVault: Vau
             disabled={isBorrowActive || isRepayActive}
             className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-primary)] rounded-lg text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-zinc-400/60 transition-colors"
           />
-          {/* Note metadata display */}
           {noteMetadata.isLoading && (
             <div className="mt-2 p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-primary)]">
               <p className="text-xs text-[var(--text-muted)] flex items-center gap-2">
@@ -116,24 +126,6 @@ export function BorrowTab({ selectedVault, networkConfig }: { selectedVault: Vau
           {noteMetadata.error && !noteMetadata.isLoading && (
             <div className="mt-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
               <p className="text-xs text-red-400">{noteMetadata.error}</p>
-            </div>
-          )}
-          {noteMetadata.isValid && !noteMetadata.isLoading && (
-            <div className="mt-2 p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-primary)]">
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div>
-                  <p className="text-xs text-[var(--text-muted)]">Amount</p>
-                  <p className="text-sm font-medium text-[var(--text-primary)]">{noteMetadata.amount}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-[var(--text-muted)]">Deposited</p>
-                  <p className="text-sm font-medium text-[var(--text-primary)]">{noteMetadata.timePassed}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-[var(--text-muted)]">Deposits After</p>
-                  <p className="text-sm font-medium text-[var(--text-primary)]">{noteMetadata.depositsAfter}</p>
-                </div>
-              </div>
             </div>
           )}
           <label className="block">
@@ -149,31 +141,35 @@ export function BorrowTab({ selectedVault, networkConfig }: { selectedVault: Vau
           <div className="p-3 rounded-lg bg-cyan-500/5 border border-cyan-500/20">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-cyan-400">Active Loan</span>
-              <span className="text-xs text-[var(--text-muted)]">Interest = vault yield rate</span>
+              <span className="text-xs text-[var(--text-muted)]">Interest: {interestPercent.toFixed(2)}%</span>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-center">
-              <div>
-                <p className="text-xs text-[var(--text-muted)]">Principal</p>
-                <p className="text-sm font-medium text-[var(--text-primary)]">
-                  {(Number(loanInfo.loan!.principalAmount) / 1e6).toFixed(2)} USDC
-                </p>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[var(--text-muted)]">Principal</span>
+                <span className="text-xs font-medium text-[var(--text-primary)]">{(principal / 1e6).toFixed(2)} USDC</span>
               </div>
-              <div>
-                <p className="text-xs text-[var(--text-muted)]">Current Debt</p>
-                <p className="text-sm font-medium text-[var(--text-primary)]">{debtDisplay} USDC</p>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[var(--text-muted)]">Interest ({interestPercent.toFixed(2)}%)</span>
+                <span className={`text-xs font-medium ${interestAmount > 0 ? 'text-amber-400' : 'text-[var(--text-secondary)]'}`}>
+                  {interestAmount > 0 ? '+' : ''}{(interestAmount / 1e6).toFixed(2)} USDC
+                </span>
+              </div>
+              {Number(loanInfo.fee) > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-muted)]">Fee</span>
+                  <span className="text-xs font-medium text-[var(--text-secondary)]">+{feeDisplay} USDC</span>
+                </div>
+              )}
+              <div className="border-t border-cyan-500/10 pt-1.5 flex items-center justify-between">
+                <span className="text-xs font-medium text-[var(--text-primary)]">To repay</span>
+                <span className="text-sm font-semibold text-[var(--accent)]">{repaymentDisplay} USDC</span>
               </div>
             </div>
-            {Number(loanInfo.fee) > 0 && (
-              <div className="mt-2 pt-2 border-t border-cyan-500/10 flex justify-between text-xs">
-                <span className="text-[var(--text-muted)]">Fee (0.5%): {feeDisplay} USDC</span>
-                <span className="text-[var(--text-secondary)]">Total: {repaymentDisplay} USDC</span>
-              </div>
-            )}
           </div>
         )}
 
         {/* Borrow controls (only if no active loan) */}
-        {!hasActiveLoan && noteInput.trim().length === 258 && (
+        {!hasActiveLoan && isNoteValid && (
           <>
             <div className="space-y-1.5">
               <label className="text-xs text-[var(--text-secondary)] font-medium">Recipient</label>
@@ -228,8 +224,8 @@ export function BorrowTab({ selectedVault, networkConfig }: { selectedVault: Vau
                   <p className="text-sm font-medium text-[var(--text-primary)]">{borrowAmount.toFixed(2)} USDC</p>
                 </div>
                 <div>
-                  <p className="text-xs text-[var(--text-muted)]">LTV</p>
-                  <p className="text-sm font-medium text-[var(--text-primary)]">{((borrowPercent * 70) / 100).toFixed(0)}%</p>
+                  <p className="text-xs text-[var(--text-muted)]">Interest</p>
+                  <p className="text-sm font-medium text-amber-400">{blendedApy != null ? `${blendedApy.toFixed(2)}%` : '—'}</p>
                 </div>
               </div>
             </div>

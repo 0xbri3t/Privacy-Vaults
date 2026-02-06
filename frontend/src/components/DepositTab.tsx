@@ -32,6 +32,7 @@ export function DepositTab({ publicClient, isConnected, address, selectedVault, 
     isConnected,
     vaultAddress: selectedVault.address,
     denomination: selectedVault.denomination,
+    displayAmount: selectedVault.displayAmount,
     networkConfig,
   })
   const isActive = step !== 'idle' && step !== 'done' && step !== 'error'

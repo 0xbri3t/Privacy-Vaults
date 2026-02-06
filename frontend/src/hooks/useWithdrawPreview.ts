@@ -6,6 +6,8 @@ interface WithdrawPreview {
   payout: string
   fee: string
   received: string
+  yield: string
+  hasYield: boolean
   feeBps: number
   isLoading: boolean
 }
@@ -14,6 +16,8 @@ const initialState: WithdrawPreview = {
   payout: '',
   fee: '',
   received: '',
+  yield: '',
+  hasYield: false,
   feeBps: 0,
   isLoading: false,
 }
@@ -59,12 +63,17 @@ export function useWithdrawPreview(
         const fee = (payout * BigInt(feeBps)) / 10000n
         const received = payout - fee
 
+        const yieldAmount = payout > denomination ? payout - denomination : 0n
+        const hasYield = payout > denomination
+
         const format = (v: bigint) => `${(Number(v) / 1e6).toFixed(2)} USDC`
 
         setState({
           payout: format(payout),
           fee: format(fee),
           received: format(received),
+          yield: hasYield ? `+${(Number(yieldAmount) / 1e6).toFixed(2)} USDC` : '0.00 USDC',
+          hasYield,
           feeBps,
           isLoading: false,
         })

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DecryptedText } from './DecryptedText.tsx'
+import { parseNotePrefix } from '../zk/note.ts'
 
 interface NoteModalProps {
   note: string
@@ -23,7 +24,16 @@ export function NoteModal({ note, onClose }: NoteModalProps) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `privacy-vault-note-${Date.now()}.txt`
+
+    const prefix = parseNotePrefix(note)
+    if (prefix) {
+      // Extract first 10 hex chars from the hex data portion (after the 4th dash)
+      const hexStart = note.split('-').slice(4).join('').slice(0, 10)
+      a.download = `backup-privacy-vaults-${prefix.currency}-${prefix.amount}-${prefix.network}-${hexStart}.txt`
+    } else {
+      a.download = `privacy-vault-note-${Date.now()}.txt`
+    }
+
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -70,7 +80,7 @@ export function NoteModal({ note, onClose }: NoteModalProps) {
           <div className="flex gap-3">
             <button
               onClick={handleCopy}
-              className="flex-1 py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[var(--text-secondary)] text-sm font-medium transition-colors"
+              className={`flex-1 py-2.5 px-4 rounded-xl border text-sm font-medium transition-colors ${copied ? 'bg-cyan-500/15 border-cyan-500/30 text-cyan-400' : 'bg-white/5 hover:bg-white/10 border-white/10 text-[var(--text-secondary)]'}`}
             >
               {copied ? 'Copied!' : 'Copy'}
             </button>

@@ -47,10 +47,13 @@ export function useNoteMetadata(
       return
     }
 
-    // Quick validation: note should be 258 chars (0x + 256 hex chars)
     const trimmed = noteHex.trim()
-    const hexPart = trimmed.startsWith('0x') ? trimmed.slice(2) : trimmed
-    if (hexPart.length !== 256) {
+
+    // Quick validation: try to decode the note
+    let decoded: ReturnType<typeof decodeNote>
+    try {
+      decoded = decodeNote(trimmed)
+    } catch {
       setState(initialState)
       return
     }
@@ -62,7 +65,7 @@ export function useNoteMetadata(
 
       try {
         // Step 1: Decode note
-        const { commitment, yieldIndex: yieldIndexBytes } = decodeNote(trimmed)
+        const { commitment, yieldIndex: yieldIndexBytes } = decoded
         const yieldIndexHex = bytesToHex(yieldIndexBytes)
 
         // Step 2: Compute final commitment using Barretenberg

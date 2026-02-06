@@ -38,8 +38,11 @@ export default async function generateProof() {
   // inputs[2] = recipient
   const yieldIndex = hexToBytes(inputs[3]);
 
-  // 2. Create the nullifier hash
+  // 2. Create the nullifier hash and collateral nullifier hash
   const { hash: nullifierHash } = await bb.poseidon2Hash({ inputs: [nullifier] });
+  const one = new Uint8Array(32);
+  one[31] = 1;
+  const { hash: collateralNullifierHash } = await bb.poseidon2Hash({ inputs: [nullifier, one] });
 
   // 3. Create merkle tree, insert leaves and get merkle proof for commitment
   const leaves = inputs.slice(4);
@@ -57,6 +60,7 @@ export default async function generateProof() {
       // Public inputs
       root: merkleProof.root,
       nullifier_hash: bytesToHex(nullifierHash),
+      collateral_nullifier_hash: bytesToHex(collateralNullifierHash),
       recipient: inputs[2],
       yield_index: bytesToHex(yieldIndex),
 

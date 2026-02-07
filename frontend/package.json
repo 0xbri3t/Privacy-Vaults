@@ -19,6 +19,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.30.0",
     "ogl": "^1.0.11",
+    "permissionless": "^0.3.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tailwind-merge": "^3.4.0",

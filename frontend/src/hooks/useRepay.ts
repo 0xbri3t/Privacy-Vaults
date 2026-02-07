@@ -1,12 +1,13 @@
 import { useState, useCallback } from 'react'
 import { useSignTypedData } from 'wagmi'
-import { encodeAbiParameters, parseAbiParameters, type Hex, toHex, getAddress } from 'viem'
+import { encodeAbiParameters, parseAbiParameters, encodeFunctionData, type Hex, toHex, getAddress } from 'viem'
 import { decodeNote } from '../zk/note.ts'
 import { computeCollateralNullifierHash } from '../zk/proof.ts'
-import { RECEIVE_WITH_AUTHORIZATION_TYPES } from '../contracts/abis.ts'
+import { RECEIVE_WITH_AUTHORIZATION_TYPES, vaultAbi } from '../contracts/abis.ts'
 import type { NetworkConfig } from '../contracts/addresses.ts'
+import { useSponsoredTransaction } from './useSponsoredTransaction.ts'
 
-const RELAYER_URL = import.meta.env.VITE_RELAYER_URL || 'http://localhost:3007'
+const BACKEND_URL = import.meta.env.VITE_RELAYER_URL || 'http://localhost:3007'
 
 export type RepayStep =
   | 'idle'
@@ -30,6 +31,7 @@ export function useRepay(vaultAddress: string, networkConfig: NetworkConfig) {
   })
 
   const { signTypedDataAsync } = useSignTypedData()
+  const { sendSponsoredTransaction } = useSponsoredTransaction()
 
   const repay = useCallback(
     async (noteHex: string, fromAddress: string) => {
@@ -40,7 +42,7 @@ export function useRepay(vaultAddress: string, networkConfig: NetworkConfig) {
         const collateralNullifierHash = await computeCollateralNullifierHash(nullifier)
 
         const loanRes = await fetch(
-          `${RELAYER_URL}/api/vault/loan?vaultAddress=${encodeURIComponent(vaultAddress)}&collateralNullifierHash=${encodeURIComponent(collateralNullifierHash)}`,
+          `${BACKEND_URL}/api/vault/loan?vaultAddress=${encodeURIComponent(vaultAddress)}&collateralNullifierHash=${encodeURIComponent(collateralNullifierHash)}`,
         )
         if (!loanRes.ok) {
           throw new Error('Failed to fetch loan info')
@@ -90,31 +92,28 @@ export function useRepay(vaultAddress: string, networkConfig: NetworkConfig) {
           [from, to, debtAmount, validAfter, validBefore, nonce, v, r, s],
         )
 
-        // Step 3: Submit repay via relayer
+        // Step 3: Submit via Pimlico-sponsored 7702 transaction
         setState((s) => ({ ...s, step: 'submitting' }))
-        const res = await fetch(`${RELAYER_URL}/api/vault/repay`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            collateralNullifierHash,
-            encodedAuth,
-            vaultAddress,
-          }),
+        const callData = encodeFunctionData({
+          abi: vaultAbi,
+          functionName: 'repayWithAuthorization',
+          args: [
+            collateralNullifierHash as `0x${string}`,
+            encodedAuth as `0x${string}`,
+          ],
         })
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: 'Relay failed' }))
-          throw new Error(err.error || err.details || 'Repay relay request failed')
-        }
+        const txHash = await sendSponsoredTransaction([
+          { to: vaultAddress as `0x${string}`, data: callData },
+        ])
 
-        const { transactionHash } = await res.json()
-        setState({ step: 'done', txHash: transactionHash, error: null })
+        setState({ step: 'done', txHash, error: null })
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error'
         setState((s) => ({ ...s, step: 'error', error: message }))
       }
     },
-    [vaultAddress, networkConfig, signTypedDataAsync],
+    [vaultAddress, networkConfig, signTypedDataAsync, sendSponsoredTransaction],
   )
 
   const reset = useCallback(() => {

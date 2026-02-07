@@ -1,11 +1,14 @@
 import { useState, useCallback } from 'react'
-import type { Hex } from 'viem'
+import { encodeFunctionData, type Hex } from 'viem'
 import { decodeNote } from '../zk/note.ts'
 import { bytesToHex } from '../zk/utils.ts'
 import { buildMerkleTree } from '../zk/merkleTree.ts'
 import { generateWithdrawProof, computeNullifierHash, computeCollateralNullifierHash } from '../zk/proof.ts'
 import { getBarretenberg } from '../zk/barretenberg.ts'
-const RELAYER_URL = import.meta.env.VITE_RELAYER_URL || 'http://localhost:3007'
+import { vaultAbi } from '../contracts/abis.ts'
+import { useSponsoredTransaction } from './useSponsoredTransaction.ts'
+
+const BACKEND_URL = import.meta.env.VITE_RELAYER_URL || 'http://localhost:3007'
 
 export type WithdrawStep =
   | 'idle'
@@ -29,6 +32,8 @@ export function useWithdraw(vaultAddress: string) {
     error: null,
   })
 
+  const { sendSponsoredTransaction } = useSponsoredTransaction()
+
   const withdraw = useCallback(
     async (noteHex: string, recipient: string) => {
       try {
@@ -44,7 +49,7 @@ export function useWithdraw(vaultAddress: string) {
         // Step 2: Fetch commitments from backend
         setState({ step: 'fetching-events', txHash: null, error: null })
         const commitmentsRes = await fetch(
-          `${RELAYER_URL}/api/vault/commitments?vaultAddress=${encodeURIComponent(vaultAddress)}`,
+          `${BACKEND_URL}/api/vault/commitments?vaultAddress=${encodeURIComponent(vaultAddress)}`,
         )
         if (!commitmentsRes.ok) {
           const err = await commitmentsRes
@@ -86,7 +91,7 @@ export function useWithdraw(vaultAddress: string) {
           merkleProof.pathIndices,
         )
 
-        // Step 5: Submit transaction via relayer
+        // Step 5: Submit via Pimlico-sponsored 7702 transaction
         setState((s) => ({ ...s, step: 'submitting' }))
         const proofHex = ('0x' +
           Array.from(proof)
@@ -96,33 +101,30 @@ export function useWithdraw(vaultAddress: string) {
         // Convert yield index bytes to decimal string for the contract
         const yieldIndexDecimal = BigInt(yieldIndexHex).toString()
 
-        const res = await fetch(`${RELAYER_URL}/api/vault/withdraw`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            proof: proofHex,
-            root: root as Hex,
-            nullifierHash: nullifierHash as Hex,
-            collateralNullifierHash: collateralNullifierHash as Hex,
-            recipient,
-            yieldIndex: yieldIndexDecimal,
-            vaultAddress,
-          }),
+        const callData = encodeFunctionData({
+          abi: vaultAbi,
+          functionName: 'withdraw',
+          args: [
+            proofHex,
+            root as `0x${string}`,
+            nullifierHash as `0x${string}`,
+            collateralNullifierHash as `0x${string}`,
+            recipient as `0x${string}`,
+            BigInt(yieldIndexDecimal),
+          ],
         })
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: 'Relay failed' }))
-          throw new Error(err.error || err.details || 'Relay request failed')
-        }
+        const txHash = await sendSponsoredTransaction([
+          { to: vaultAddress as `0x${string}`, data: callData },
+        ])
 
-        const { transactionHash } = await res.json()
-        setState({ step: 'done', txHash: transactionHash, error: null })
+        setState({ step: 'done', txHash, error: null })
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error'
         setState((s) => ({ ...s, step: 'error', error: message }))
       }
     },
-    [vaultAddress],
+    [vaultAddress, sendSponsoredTransaction],
   )
 
   const reset = useCallback(() => {

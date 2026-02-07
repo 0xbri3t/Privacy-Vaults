@@ -17,7 +17,33 @@ export const vaultAbi = [
       { name: '_proof', type: 'bytes' },
       { name: '_root', type: 'bytes32' },
       { name: '_nullifierHash', type: 'bytes32' },
+      { name: '_collateralNullifierHash', type: 'bytes32' },
       { name: '_recipient', type: 'address' },
+      { name: '_yieldIndex', type: 'uint256' },
+    ],
+    outputs: [],
+  },
+  {
+    name: 'borrow',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: '_proof', type: 'bytes' },
+      { name: '_root', type: 'bytes32' },
+      { name: '_collateralNullifierHash', type: 'bytes32' },
+      { name: '_recipient', type: 'address' },
+      { name: '_yieldIndex', type: 'uint256' },
+      { name: '_borrowAmount', type: 'uint256' },
+    ],
+    outputs: [],
+  },
+  {
+    name: 'repayWithAuthorization',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: '_collateralNullifierHash', type: 'bytes32' },
+      { name: '_receiveAuthorization', type: 'bytes' },
     ],
     outputs: [],
   },
@@ -35,6 +61,7 @@ export const vaultAbi = [
       { name: 'commitment', type: 'bytes32', indexed: true },
       { name: 'leafIndex', type: 'uint32', indexed: false },
       { name: 'timestamp', type: 'uint256', indexed: false },
+      { name: 'yieldIndex', type: 'uint256', indexed: false },
     ],
   },
   {
@@ -43,6 +70,7 @@ export const vaultAbi = [
     inputs: [
       { name: 'to', type: 'address', indexed: false },
       { name: 'nullifierHash', type: 'bytes32', indexed: false },
+      { name: 'payout', type: 'uint256', indexed: false },
     ],
   },
 ] as const

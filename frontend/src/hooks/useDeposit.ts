@@ -1,21 +1,15 @@
 import { useState, useCallback } from 'react'
 import { useSignTypedData } from 'wagmi'
-import { encodeAbiParameters, parseAbiParameters, type Hex, toHex, getAddress, parseAbiItem, createPublicClient, http, decodeEventLog } from 'viem'
-import { baseSepolia, base } from 'viem/chains'
+import { encodeAbiParameters, parseAbiParameters, encodeFunctionData, decodeEventLog, type Hex, toHex, getAddress } from 'viem'
 import { generateCommitment } from '../zk/commitment.ts'
 import { encodeNote } from '../zk/note.ts'
 import { hexToBytes } from '../zk/utils.ts'
 import {
   RECEIVE_WITH_AUTHORIZATION_TYPES,
+  vaultAbi,
 } from '../contracts/abis.ts'
 import type { NetworkConfig } from '../contracts/addresses.ts'
-
-const CHAIN_MAP: Record<number, typeof baseSepolia | typeof base> = {
-  [baseSepolia.id]: baseSepolia,
-  [base.id]: base,
-}
-
-const RELAYER_URL = import.meta.env.VITE_RELAYER_URL || 'http://localhost:3007'
+import { useSponsoredTransaction } from './useSponsoredTransaction.ts'
 
 export type DepositStep =
   | 'idle'
@@ -55,6 +49,7 @@ export function useDeposit({ address, isConnected, vaultAddress, denomination, d
   })
 
   const { signTypedDataAsync } = useSignTypedData()
+  const { sendSponsoredTransaction, publicClient } = useSponsoredTransaction()
 
   const deposit = useCallback(async () => {
     if (!isConnected) {
@@ -117,46 +112,28 @@ export function useDeposit({ address, isConnected, vaultAddress, denomination, d
         ],
       )
 
-      // Step 3: Submit via backend relayer (relayer pays gas)
+      // Step 3: Submit via Pimlico-sponsored 7702 transaction
       setState((s) => ({ ...s, step: 'submitting' }))
-      const res = await fetch(`${RELAYER_URL}/api/vault/deposit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          commitment: commitment.commitmentHex,
-          encodedAuth,
-          vaultAddress,
-        }),
+      const callData = encodeFunctionData({
+        abi: vaultAbi,
+        functionName: 'depositWithAuthorization',
+        args: [commitment.commitmentHex as `0x${string}`, encodedAuth as `0x${string}`],
       })
 
-      const data = await res.json()
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || data.details || 'Relayer request failed')
-      }
+      const txHash = await sendSponsoredTransaction([
+        { to: vaultAddress, data: callData },
+      ])
 
-      // Step 4: Read yieldIndex from the deposit event log
-      const depositEventAbi = parseAbiItem(
-        'event DepositWithAuthorization(bytes32 indexed commitment, uint32 leafIndex, uint256 timestamp, uint256 yieldIndex)',
-      )
+      // Step 4: Wait for receipt and read yieldIndex from logs
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
 
-      const txHash = data.transactionHash as `0x${string}`
-
-      // Fetch receipt via public RPC to decode the deposit event
-      const viemChain = CHAIN_MAP[networkConfig.chainId] ?? baseSepolia
-      const publicClient = createPublicClient({
-        chain: viemChain,
-        transport: http(),
-      })
-      const receipt = await publicClient.getTransactionReceipt({ hash: txHash })
-
-      // Find the DepositWithAuthorization event and extract yieldIndex
       let yieldIndexBytes: Uint8Array | undefined
       for (const log of receipt.logs) {
         try {
           const decoded = decodeEventLog({
-            abi: [depositEventAbi],
+            abi: vaultAbi,
             data: log.data,
-            topics: log.topics,
+            topics: log.topics as [Hex, ...Hex[]],
           })
           if (decoded.eventName === 'DepositWithAuthorization') {
             const yieldIndexBigInt = (decoded.args as { yieldIndex: bigint }).yieldIndex
@@ -175,12 +152,12 @@ export function useDeposit({ address, isConnected, vaultAddress, denomination, d
 
       const network = chainIdToNetwork[networkConfig.chainId] ?? `chain_${networkConfig.chainId}`
       const note = encodeNote(commitment.commitment, commitment.nullifier, commitment.secret, yieldIndexBytes, 'usdc', displayAmount, network)
-      setState({ step: 'done', note, txHash: data.transactionHash, error: null })
+      setState({ step: 'done', note, txHash, error: null })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
       setState((s) => ({ ...s, step: 'error', error: message }))
     }
-  }, [signTypedDataAsync, isConnected, address, vaultAddress, denomination, displayAmount, networkConfig])
+  }, [signTypedDataAsync, sendSponsoredTransaction, publicClient, isConnected, address, vaultAddress, denomination, displayAmount, networkConfig])
 
   const reset = useCallback(() => {
     setState({ step: 'idle', note: null, txHash: null, error: null })

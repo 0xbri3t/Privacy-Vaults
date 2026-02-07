@@ -32,28 +32,28 @@ export interface NetworkConfig {
 // ── Testnet (Base Sepolia) ──────────────────────────────────────────
 const TESTNET_VAULTS: VaultConfig[] = [
   {
-    address: '0xf90D2f820a327d4F3cc2DE36dBBfd98C124720a9',
+    address: '0xC3EaBe4e5300bD4384BF0AC249826eF96146C200',
     denomination: 1_000_000n,
     label: '1 USDC',
     displayAmount: 1,
     enabled: true,
   },
   {
-    address: '0x376dFe15CE2e1e276a35e55F02Dd101Fe1a66e73',
+    address: '0xAB9ab8dE301ced54d6d48921508467EA04A60760',
     denomination: 10_000_000n,
     label: '10 USDC',
     displayAmount: 10,
     enabled: true,
   },
   {
-    address: '0x6185aAEaf0c65Fb050DBfb07666D447195d8681b',
+    address: '0xaa4eAFB4E0a1A59f5ca4d35b83673e18F66258EB',
     denomination: 20_000_000n,
     label: '20 USDC',
     displayAmount: 20,
     enabled: true,
   },
   {
-    address: '0x3CAffD2107d323Ed78f3BeA9337088FBDE6eB00C',
+    address: '0x452068E0F0f7BF300E5935E05Be6f1970758FcFf',
     denomination: 50_000_000n,
     label: '50 USDC',
     displayAmount: 50,

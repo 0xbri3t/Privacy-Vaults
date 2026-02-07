@@ -119,7 +119,87 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
       {/* Borrow Showcase */}
       <BorrowShowcase />
 
-      {/* Features */}
+      {/* Experience */}
+      <section className="relative z-10 py-24 px-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          {/* Left — Big animated text */}
+          <div className="flex flex-col gap-4">
+            {[
+              { text: 'Zero popups.', color: 'var(--accent)' },
+              { text: 'Zero gas fees.', color: '#D4A853' },
+              { text: 'One-click UX.', color: 'var(--text-primary)' },
+              { text: 'Full privacy.', color: 'var(--accent)' },
+            ].map((line, i) => (
+              <motion.span
+                key={line.text}
+                initial={{ opacity: 0, x: -40 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15, duration: 0.5, ease: 'easeOut' }}
+                className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight"
+                style={{ color: line.color }}
+              >
+                {line.text}
+              </motion.span>
+            ))}
+          </div>
+
+          {/* Right — Feature cards with logos */}
+          <div className="flex flex-col gap-5">
+            {[
+              {
+                logo: '/openfortlittle.png',
+                title: 'Embedded Wallets',
+                desc: 'No seed phrases, no extensions. One-click onboarding with Openfort.',
+              },
+              {
+                logos: ['/aave.png', '/morpho.png'],
+                title: 'DeFi Yield',
+                desc: 'Funds earn yield in Aave V3 and MetaMorpho while fully anonymous.',
+              },
+              {
+                logo: '/noir.png',
+                title: 'Zero-Knowledge Proofs',
+                desc: 'Noir circuits make depositor and withdrawer completely unlinkable.',
+                needsBg: true,
+              },
+              {
+                logo: '/ens.png',
+                title: 'ENS Names',
+                desc: 'Send to human-readable names. ENS text records for cross-chain preferences.',
+              },
+            ].map((card, i) => (
+              <motion.div
+                key={card.title}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeUp}
+                custom={i + 1}
+                className="flex items-center gap-4 p-5 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-surface)]/50 backdrop-blur-sm hover:border-[var(--accent)]/30 transition-all duration-300"
+              >
+                <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${card.needsBg ? 'bg-white/90' : ''}`}>
+                  {'logos' in card ? (
+                    <div className="flex items-center -space-x-1">
+                      {card.logos!.map((src) => (
+                        <img key={src} src={src} alt="" className="w-9 h-9 object-contain" />
+                      ))}
+                    </div>
+                  ) : (
+                    <img src={card.logo} alt="" className="w-10 h-10 object-contain" />
+                  )}
+                </div>
+                <div>
+                  <h4 className="text-base font-semibold text-[var(--text-primary)]">{card.title}</h4>
+                  <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">{card.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Partners */}
       <section className="relative z-10 py-24 px-6">
         <div className="max-w-6xl mx-auto">
           <motion.h2
@@ -131,7 +211,7 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
             className="text-3xl sm:text-4xl font-bold text-center mb-4"
           >
             <DecryptedText
-              text="Features"
+              text="Partners"
               animateOn="view"
               sequential
               speed={40}
@@ -147,137 +227,139 @@ export function LandingPage({ onLaunch }: LandingPageProps) {
             custom={1}
             className="text-center text-[var(--text-tertiary)] mb-16 max-w-2xl mx-auto"
           >
-            Built for privacy, designed for everyone
+            Integrations that make privacy usable
           </motion.p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Openfort Embedded Wallets */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* ENS Card */}
             <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
               variants={fadeUp}
               custom={2}
-              className="group p-6 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-surface)]/50 backdrop-blur-sm hover:border-[var(--accent)]/30 transition-all duration-300"
+              className="group p-8 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-surface)]/50 backdrop-blur-sm hover:border-[#5298FF]/40 transition-all duration-300"
             >
-              <div className="w-12 h-12 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center mb-4 group-hover:bg-[var(--accent)]/20 transition-colors">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)]">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
+              <div className="flex items-center gap-4 mb-6">
+                <img src="/ens.png" alt="ENS" className="w-14 h-14 object-contain" />
+                <div>
+                  <h3 className="text-2xl font-bold text-[var(--text-primary)]">ENS</h3>
+                  <p className="text-sm text-[var(--text-tertiary)]">Human-Readable Addresses</p>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Openfort Embedded Wallets</h3>
-              <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">
-                Non-custodial in-app wallets powered by Openfort — no seed phrases, no extensions. Gasless transactions and instant wallet creation make DeFi accessible to everyone.
-              </p>
+
+              {/* Visual mockup — ENS resolution */}
+              <div className="rounded-xl bg-[var(--bg-deep)] border border-[var(--border-subtle)] p-5 mb-6">
+                <p className="text-xs text-[var(--text-muted)] mb-3 uppercase tracking-wider font-medium">Recipient</p>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex-1 rounded-lg bg-[var(--bg-page)] border border-[var(--border-primary)] px-4 py-2.5 font-mono text-base text-[#5298FF]">
+                    vitalik.eth
+                  </div>
+                </div>
+                {/* Arrow */}
+                <div className="flex justify-center my-2">
+                  <svg width="20" height="24" viewBox="0 0 20 24" fill="none" className="text-[var(--text-muted)]">
+                    <path d="M10 0v20M3 14l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                {/* Resolved */}
+                <div className="flex items-center gap-3 mt-2 rounded-lg bg-[var(--bg-page)] border border-[#5298FF]/30 px-4 py-2.5">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#5298FF] to-[#7C3AED] shrink-0" />
+                  <div className="min-w-0">
+                    <span className="text-sm font-semibold text-[var(--text-primary)] block">vitalik.eth</span>
+                    <span className="text-xs font-mono text-[var(--text-muted)] block truncate">0xd8dA...6045</span>
+                  </div>
+                </div>
+              </div>
+
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
+                  <span className="text-[#5298FF] mt-0.5 shrink-0">&#x2713;</span>
+                  Type ENS names instead of raw addresses
+                </li>
+                <li className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
+                  <span className="text-[#5298FF] mt-0.5 shrink-0">&#x2713;</span>
+                  Avatar and address resolved automatically
+                </li>
+                <li className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
+                  <span className="text-[#5298FF] mt-0.5 shrink-0">&#x2713;</span>
+                  Text records for preferred chain and token
+                </li>
+              </ul>
             </motion.div>
 
-            {/* Cross-chain with LI.FI */}
+            {/* LI.FI Card */}
             <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
               variants={fadeUp}
               custom={3}
-              className="group p-6 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-surface)]/50 backdrop-blur-sm hover:border-[var(--accent)]/30 transition-all duration-300"
+              className="group p-8 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-surface)]/50 backdrop-blur-sm hover:border-[#BF5AF2]/40 transition-all duration-300"
             >
-              <div className="w-12 h-12 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center mb-4 group-hover:bg-[var(--accent)]/20 transition-colors">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)]">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="2" y1="12" x2="22" y2="12" />
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>
+              <div className="flex items-center gap-4 mb-6">
+                <img src="/lifi.png" alt="LI.FI" className="w-14 h-14 object-contain" />
+                <div>
+                  <h3 className="text-2xl font-bold text-[var(--text-primary)]">LI.FI</h3>
+                  <p className="text-sm text-[var(--text-tertiary)]">Cross-Chain Withdrawals</p>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Cross-Chain with LI.FI</h3>
-              <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">
-                Withdraw to any chain and any token. LI.FI integration enables private cross-chain transfers with optimal routing.
-              </p>
-            </motion.div>
 
-            {/* ENS */}
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              custom={4}
-              className="group p-6 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-surface)]/50 backdrop-blur-sm hover:border-[var(--accent)]/30 transition-all duration-300"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center mb-4 group-hover:bg-[var(--accent)]/20 transition-colors">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)]">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22,6 12,13 2,6" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">ENS Integration</h3>
-              <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">
-                Send to human-readable ENS names instead of complex addresses. Privacy meets usability.
-              </p>
-            </motion.div>
+              {/* Visual mockup — bridging flow */}
+              <div className="rounded-xl bg-[var(--bg-deep)] border border-[var(--border-subtle)] p-5 mb-6">
+                <div className="flex items-center justify-between gap-3">
+                  {/* From */}
+                  <div className="flex-1 rounded-lg bg-[var(--bg-page)] border border-[var(--border-primary)] p-3 text-center">
+                    <img src="/image.png" alt="Base" className="w-10 h-10 mx-auto mb-2 rounded-full object-contain" />
+                    <span className="text-xs font-semibold text-[var(--text-primary)] block">Base</span>
+                    <span className="text-xs text-[var(--text-muted)]">USDC</span>
+                  </div>
 
-            {/* ZK Circuits */}
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              custom={5}
-              className="group p-6 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-surface)]/50 backdrop-blur-sm hover:border-[var(--accent)]/30 transition-all duration-300"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center mb-4 group-hover:bg-[var(--accent)]/20 transition-colors">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)]">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Full Privacy with ZK Circuits</h3>
-              <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">
-                Zero-knowledge proofs ensure complete privacy. Your deposits and withdrawals are cryptographically unlinkable.
-              </p>
-            </motion.div>
+                  {/* Arrow with LI.FI */}
+                  <div className="flex flex-col items-center gap-1 px-2 shrink-0">
+                    <svg width="40" height="16" viewBox="0 0 40 16" fill="none" className="text-[#BF5AF2]">
+                      <path d="M0 8h36M30 2l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span className="text-[10px] text-[#BF5AF2] font-semibold uppercase tracking-wider">Bridge</span>
+                  </div>
 
-            {/* Yield + Anonymity */}
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              custom={6}
-              className="group p-6 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-surface)]/50 backdrop-blur-sm hover:border-[var(--accent)]/30 transition-all duration-300"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center mb-4 group-hover:bg-[var(--accent)]/20 transition-colors">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)]">
-                  <line x1="12" y1="1" x2="12" y2="23" />
-                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Yield While Anonymous</h3>
-              <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">
-                Your funds earn yield in DeFi strategies while maintaining full anonymity. Privacy doesn't mean idle capital.
-              </p>
-            </motion.div>
+                  {/* To */}
+                  <div className="flex-1 rounded-lg bg-[var(--bg-page)] border border-[#BF5AF2]/30 p-3 text-center">
+                    <img src="/ethereum.png" alt="Ethereum" className="w-10 h-10 mx-auto mb-2 rounded-full object-contain" />
+                    <span className="text-xs font-semibold text-[var(--text-primary)] block">Ethereum</span>
+                    <span className="text-xs text-[var(--text-muted)]">Any token</span>
+                  </div>
+                </div>
 
-            {/* Open Source */}
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              custom={7}
-              className="group p-6 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-surface)]/50 backdrop-blur-sm hover:border-[var(--accent)]/30 transition-all duration-300"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center mb-4 group-hover:bg-[var(--accent)]/20 transition-colors">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)]">
-                  <polyline points="16 18 22 12 16 6" />
-                  <polyline points="8 6 2 12 8 18" />
-                </svg>
+                {/* Other chains */}
+                <div className="flex items-center justify-center gap-2 mt-4 pt-3 border-t border-[var(--border-subtle)]">
+                  <span className="text-xs text-[var(--text-muted)]">Also:</span>
+                  {['Arbitrum', 'Polygon', 'Optimism', 'Avalanche'].map((chain) => (
+                    <span
+                      key={chain}
+                      className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-page)] border border-[var(--border-subtle)] text-[var(--text-tertiary)]"
+                    >
+                      {chain}
+                    </span>
+                  ))}
+                  <span className="text-[10px] text-[var(--text-muted)] italic">and more</span>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Open Source</h3>
-              <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">
-                Fully transparent and auditable code. Trust is built through verification, not promises.
-              </p>
+
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
+                  <span className="text-[#BF5AF2] mt-0.5 shrink-0">&#x2713;</span>
+                  Withdraw privately to any chain
+                </li>
+                <li className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
+                  <span className="text-[#BF5AF2] mt-0.5 shrink-0">&#x2713;</span>
+                  Receive in any token via optimal routing
+                </li>
+                <li className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
+                  <span className="text-[#BF5AF2] mt-0.5 shrink-0">&#x2713;</span>
+                  Set preferences in your ENS text records
+                </li>
+              </ul>
             </motion.div>
           </div>
         </div>

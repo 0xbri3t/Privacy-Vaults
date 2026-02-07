@@ -8,7 +8,7 @@ import { useNoteMetadata } from '../hooks/useNoteMetadata.ts'
 import { useYieldApy } from '../hooks/useYieldApy.ts'
 import { decodeNote } from '../zk/note.ts'
 import { ProgressModal } from './ProgressModal.tsx'
-import { useEnsResolution } from '../hooks/useEnsResolution.ts'
+import { useEnsResolution } from '../hooks/ens/useEnsResolution.ts'
 import type { VaultConfig, NetworkConfig } from '../contracts/addresses.ts'
 
 const BORROW_STEPS = [

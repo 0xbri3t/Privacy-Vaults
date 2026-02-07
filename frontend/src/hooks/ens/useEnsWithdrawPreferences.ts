@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useEnsText } from 'wagmi'
 import { normalize } from 'viem/ens'
-import { SUPPORTED_CHAINS, COMMON_TOKENS, type ChainConfig, type TokenConfig } from '../constants/chains.ts'
+import { SUPPORTED_CHAINS, COMMON_TOKENS, type ChainConfig, type TokenConfig } from '../../constants/chains.ts'
 
 export interface WithdrawPreferences {
   chain: ChainConfig | null

@@ -6,10 +6,10 @@ import { useNoteMetadata } from '../hooks/useNoteMetadata.ts'
 import { useWithdrawPreview } from '../hooks/useWithdrawPreview.ts'
 import { ProgressModal } from './ProgressModal.tsx'
 import { CrossChainSelector } from './CrossChainSelector.tsx'
-import { useLiFiQuote } from '../hooks/useLiFiQuote.ts'
-import { useLiFiBridge } from '../hooks/useLiFiBridge.ts'
-import { useEnsResolution } from '../hooks/useEnsResolution.ts'
-import { useEnsWithdrawPreferences } from '../hooks/useEnsWithdrawPreferences.ts'
+import { useLiFiQuote } from '../hooks/lifi/useLiFiQuote.ts'
+import { useLiFiBridge } from '../hooks/lifi/useLiFiBridge.ts'
+import { useEnsResolution } from '../hooks/ens/useEnsResolution.ts'
+import { useEnsWithdrawPreferences } from '../hooks/ens/useEnsWithdrawPreferences.ts'
 import { SUPPORTED_CHAINS, COMMON_TOKENS, type ChainConfig, type TokenConfig } from '../constants/chains.ts'
 import type { VaultConfig, NetworkConfig } from '../contracts/addresses.ts'
 import { useNetworkMode } from '../contexts/NetworkModeContext.tsx'
@@ -82,6 +82,13 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
     toTokenAddress: selectedToken.address,
     enabled: effectiveCrossChain && isConnected && !!address,
   })
+
+  // Auto-trigger gasless bridge after cross-chain withdrawal
+  useEffect(() => {
+    if (step === 'done' && txHash && effectiveCrossChain && bridgeStep === 'idle' && quote) {
+      bridge(quote)
+    }
+  }, [step, txHash, effectiveCrossChain, bridgeStep, quote, bridge])
 
   const isActive =
     step !== 'idle' && step !== 'done' && step !== 'error'
@@ -333,20 +340,7 @@ export function WithdrawTab({ selectedVault, networkConfig }: { selectedVault: V
         onClose={bridgeReset}
       />
 
-      {/* Success — withdraw done, trigger bridge */}
-      {step === 'done' && txHash && effectiveCrossChain && bridgeStep === 'idle' && quote && (
-        <div className="space-y-3">
-          <div className="rounded-xl bg-cyan-500/10 border border-cyan-500/20 p-4 text-cyan-300 text-sm">
-            Step 1 complete — USDC withdrawn to your wallet on Base.
-          </div>
-          <button
-            onClick={() => bridge(quote)}
-            className="w-full py-3.5 px-4 rounded-xl bg-[var(--accent)] text-[var(--bg-deep)] font-semibold hover:bg-[var(--accent-hover)] hover:shadow-lg hover:shadow-cyan-500/20 transition-all"
-          >
-            Bridge to {selectedChain.name}
-          </button>
-        </div>
-      )}
+      {/* Auto-trigger bridge after gasless withdrawal */}
 
       {/* Bridge complete */}
       {bridgeStep === 'complete' && bridgeTxHash && (

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { BASE_CHAIN_ID, BASE_USDC_ADDRESS } from '../constants/chains.ts'
+import { BASE_CHAIN_ID, BASE_USDC_ADDRESS } from '../../constants/chains.ts'
 
 const LIFI_API = 'https://li.quest/v1'
 

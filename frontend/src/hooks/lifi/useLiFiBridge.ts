@@ -1,7 +1,9 @@
 import { useState, useCallback, useRef } from 'react'
-import { useSendTransaction } from 'wagmi'
+import { encodeFunctionData, erc20Abi, maxUint256, type Hex } from 'viem'
+import { useSponsoredTransaction } from '../useSponsoredTransaction.ts'
 import type { LiFiQuote } from './useLiFiQuote.ts'
-import { sanitizeError } from '../lib/utils.ts'
+import { sanitizeError } from '../../lib/utils.ts'
+import { BASE_USDC_ADDRESS } from '../../constants/chains.ts'
 
 const LIFI_API = 'https://li.quest/v1'
 
@@ -20,7 +22,7 @@ export function useLiFiBridge() {
     error: null,
   })
 
-  const { sendTransactionAsync } = useSendTransaction()
+  const { sendSponsoredTransaction } = useSponsoredTransaction()
   const pollingRef = useRef<ReturnType<typeof setInterval>>(null)
 
   const bridge = useCallback(async (quote: LiFiQuote) => {
@@ -28,12 +30,22 @@ export function useLiFiBridge() {
       setState({ step: 'bridging', txHash: null, error: null })
 
       const tx = quote.transactionRequest
-      const txHash = await sendTransactionAsync({
-        to: tx.to as `0x${string}`,
-        data: tx.data as `0x${string}`,
-        value: BigInt(tx.value || '0'),
-        chainId: tx.chainId,
-      })
+      const calls = [
+        {
+          to: BASE_USDC_ADDRESS as Hex,
+          data: encodeFunctionData({
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [tx.to as Hex, maxUint256],
+          }),
+        },
+        {
+          to: tx.to as Hex,
+          data: tx.data as Hex,
+          value: BigInt(tx.value || '0'),
+        },
+      ]
+      const txHash = await sendSponsoredTransaction(calls)
 
       setState((s) => ({ ...s, step: 'polling', txHash }))
 
@@ -76,7 +88,7 @@ export function useLiFiBridge() {
       if (pollingRef.current) clearInterval(pollingRef.current)
       setState((s) => ({ ...s, step: 'error', error: sanitizeError(err) }))
     }
-  }, [sendTransactionAsync])
+  }, [sendSponsoredTransaction])
 
   const reset = useCallback(() => {
     if (pollingRef.current) clearInterval(pollingRef.current)

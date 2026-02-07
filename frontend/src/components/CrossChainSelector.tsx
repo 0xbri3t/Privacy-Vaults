@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { SUPPORTED_CHAINS, COMMON_TOKENS, BASE_CHAIN_ID, type ChainConfig, type TokenConfig } from '../constants/chains.ts'
-import type { LiFiQuote } from '../hooks/useLiFiQuote.ts'
+import type { LiFiQuote } from '../hooks/lifi/useLiFiQuote.ts'
 
 interface CrossChainSelectorProps {
   enabled: boolean

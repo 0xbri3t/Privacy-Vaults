@@ -10,6 +10,7 @@ import {
 } from '../contracts/abis.ts'
 import type { NetworkConfig } from '../contracts/addresses.ts'
 import { useSponsoredTransaction } from './useSponsoredTransaction.ts'
+import { sanitizeError } from '../lib/utils.ts'
 
 export type DepositStep =
   | 'idle'
@@ -154,8 +155,7 @@ export function useDeposit({ address, isConnected, vaultAddress, denomination, d
       const note = encodeNote(commitment.commitment, commitment.nullifier, commitment.secret, yieldIndexBytes, 'usdc', displayAmount, network)
       setState({ step: 'done', note, txHash, error: null })
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error'
-      setState((s) => ({ ...s, step: 'error', error: message }))
+      setState((s) => ({ ...s, step: 'error', error: sanitizeError(err) }))
     }
   }, [signTypedDataAsync, sendSponsoredTransaction, publicClient, isConnected, address, vaultAddress, denomination, displayAmount, networkConfig])
 

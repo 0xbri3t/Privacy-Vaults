@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { useSendTransaction } from 'wagmi'
 import type { LiFiQuote } from './useLiFiQuote.ts'
+import { sanitizeError } from '../lib/utils.ts'
 
 const LIFI_API = 'https://li.quest/v1'
 
@@ -73,8 +74,7 @@ export function useLiFiBridge() {
       setState({ step: 'complete', txHash, error: null })
     } catch (err) {
       if (pollingRef.current) clearInterval(pollingRef.current)
-      const message = err instanceof Error ? err.message : 'Bridge failed'
-      setState((s) => ({ ...s, step: 'error', error: message }))
+      setState((s) => ({ ...s, step: 'error', error: sanitizeError(err) }))
     }
   }, [sendTransactionAsync])
 

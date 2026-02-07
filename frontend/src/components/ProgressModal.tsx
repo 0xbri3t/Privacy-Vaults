@@ -237,7 +237,7 @@ export function ProgressModal({
 
               {/* Error banner */}
               {isError && error && (
-                <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-red-400 text-sm break-all">
+                <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-red-400 text-sm max-h-20 overflow-y-auto">
                   {error}
                 </div>
               )}

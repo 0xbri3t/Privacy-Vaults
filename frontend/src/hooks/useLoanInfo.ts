@@ -19,7 +19,7 @@ interface LoanInfo {
   error: string | null
 }
 
-export function useLoanInfo(noteInput: string, vaultAddress: string) {
+export function useLoanInfo(noteInput: string, vaultAddress: string, refreshKey = 0) {
   const [info, setInfo] = useState<LoanInfo>({
     debt: '0',
     fee: '0',
@@ -83,7 +83,7 @@ export function useLoanInfo(noteInput: string, vaultAddress: string) {
 
     fetchLoan()
     return () => { cancelled = true }
-  }, [noteInput, vaultAddress])
+  }, [noteInput, vaultAddress, refreshKey])
 
   return info
 }

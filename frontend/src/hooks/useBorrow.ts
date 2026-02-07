@@ -7,6 +7,7 @@ import { generateBorrowProof, computeCollateralNullifierHash } from '../zk/proof
 import { getBarretenberg } from '../zk/barretenberg.ts'
 import { vaultAbi } from '../contracts/abis.ts'
 import { useSponsoredTransaction } from './useSponsoredTransaction.ts'
+import { sanitizeError } from '../lib/utils.ts'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3007'
 
@@ -116,8 +117,7 @@ export function useBorrow(vaultAddress: string) {
 
         setState({ step: 'done', txHash, error: null })
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error'
-        setState((s) => ({ ...s, step: 'error', error: message }))
+        setState((s) => ({ ...s, step: 'error', error: sanitizeError(err) }))
       }
     },
     [vaultAddress, sendSponsoredTransaction],

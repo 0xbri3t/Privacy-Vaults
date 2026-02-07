@@ -30,10 +30,12 @@ export function BorrowTab({ selectedVault, networkConfig }: { selectedVault: Vau
   const [noteInput, setNoteInput] = useState('')
   const [recipient, setRecipient] = useState('')
   const [borrowPercent, setBorrowPercent] = useState(70)
+  const [submittedBorrowAmount, setSubmittedBorrowAmount] = useState<number | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
   const { address, isConnected } = useAccount()
   const { step: borrowStep, txHash: borrowTxHash, error: borrowError, borrow, reset: borrowReset } = useBorrow(selectedVault.address)
   const { step: repayStep, txHash: repayTxHash, error: repayError, repay, reset: repayReset } = useRepay(selectedVault.address, networkConfig)
-  const loanInfo = useLoanInfo(noteInput, selectedVault.address)
+  const loanInfo = useLoanInfo(noteInput, selectedVault.address, refreshKey)
   const noteMetadata = useNoteMetadata(noteInput, selectedVault.address, Number(selectedVault.denomination), selectedVault.displayAmount)
   const { blendedApy } = useYieldApy(networkConfig.yieldPools)
   const maxBorrow = (selectedVault.displayAmount * LTV_BPS) / BPS
@@ -68,6 +70,7 @@ export function BorrowTab({ selectedVault, networkConfig }: { selectedVault: Vau
 
   const handleBorrow = () => {
     if (!noteInput.trim() || !recipient.trim()) return
+    setSubmittedBorrowAmount(borrowAmount)
     borrow(noteInput.trim(), recipient.trim(), borrowAmountRaw.toString())
   }
 
@@ -263,17 +266,17 @@ export function BorrowTab({ selectedVault, networkConfig }: { selectedVault: Vau
       {/* Borrow progress modal */}
       <ProgressModal
         isOpen={borrowStep !== 'idle'}
-        title={`Borrowing ${borrowAmount.toFixed(2)} USDC`}
+        title={`Borrowing ${(submittedBorrowAmount ?? borrowAmount).toFixed(2)} USDC`}
         steps={BORROW_STEPS}
         currentStep={borrowStep}
         error={borrowError}
         txHash={borrowTxHash}
         explorerUrl={networkConfig.explorerBaseUrl}
         onRetry={borrowReset}
-        onClose={borrowReset}
+        onClose={() => { setSubmittedBorrowAmount(null); borrowReset() }}
         successTitle="Borrow Successful"
-        successMessage={`You borrowed ${borrowAmount.toFixed(2)} USDC`}
-        onDone={borrowReset}
+        successMessage={`You borrowed ${(submittedBorrowAmount ?? borrowAmount).toFixed(2)} USDC`}
+        onDone={() => { setSubmittedBorrowAmount(null); setRefreshKey((k) => k + 1); borrowReset() }}
       />
 
       {/* Repay progress modal */}
@@ -289,7 +292,7 @@ export function BorrowTab({ selectedVault, networkConfig }: { selectedVault: Vau
         onClose={repayReset}
         successTitle="Repayment Successful"
         successMessage={`You repaid ${repaymentDisplay} USDC`}
-        onDone={repayReset}
+        onDone={() => { setRefreshKey((k) => k + 1); repayReset() }}
       />
     </div>
   )

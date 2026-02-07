@@ -113,7 +113,7 @@ contract VaultHandler is Test {
         if (info.withdrawn || info.hasActiveLoan) return;
 
         bytes32 root = vault.getLatestRoot();
-        address payable recipient = payable(depositor);
+        address recipient = depositor;
 
         bytes memory dummyProof = new bytes(0);
         bytes32[] memory publicInputs = new bytes32[](5);
@@ -146,7 +146,7 @@ contract VaultHandler is Test {
         amount = bound(amount, 1, maxBorrow);
 
         bytes32 root = vault.getLatestRoot();
-        address payable recipient = payable(depositor);
+        address recipient = depositor;
 
         bytes memory dummyProof = new bytes(0);
 

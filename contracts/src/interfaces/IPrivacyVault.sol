@@ -73,7 +73,7 @@ interface IPrivacyVault {
         bytes32 _root,
         bytes32 _nullifierHash,
         bytes32 _collateralNullifierHash,
-        address payable _recipient,
+        address _recipient,
         uint256 _yieldIndex
     ) external;
 
@@ -81,7 +81,7 @@ interface IPrivacyVault {
         bytes calldata _proof,
         bytes32 _root,
         bytes32 _collateralNullifierHash,
-        address payable _recipient,
+        address _recipient,
         uint256 _yieldIndex,
         uint256 _borrowAmount
     ) external;

@@ -203,7 +203,7 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable, IPriva
         bytes32 _root,
         bytes32 _nullifierHash,
         bytes32 _collateralNullifierHash,
-        address payable _recipient,
+        address _recipient,
         uint256 _yieldIndex
     ) external nonReentrant {
         if (s_nullifierHashes[_nullifierHash]) {
@@ -228,7 +228,7 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable, IPriva
         publicInputs[0] = _root;
         publicInputs[1] = _nullifierHash;
         publicInputs[2] = _collateralNullifierHash;
-        publicInputs[3] = bytes32(uint256(uint160(address(_recipient))));
+        publicInputs[3] = bytes32(uint256(uint160(_recipient)));
         publicInputs[4] = bytes32(_yieldIndex);
 
         if (!i_verifier.verify(_proof, publicInputs)) revert PrivacyVault__InvalidWithdrawProof();
@@ -263,7 +263,7 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable, IPriva
         bytes calldata _proof,
         bytes32 _root,
         bytes32 _collateralNullifierHash,
-        address payable _recipient,
+        address _recipient,
         uint256 _yieldIndex,
         uint256 _borrowAmount
     ) external nonReentrant {
@@ -286,7 +286,7 @@ contract PrivacyVault is IncrementalMerkleTree, ReentrancyGuard, Ownable, IPriva
         bytes32[] memory publicInputs = new bytes32[](4);
         publicInputs[0] = _root;
         publicInputs[1] = _collateralNullifierHash;
-        publicInputs[2] = bytes32(uint256(uint160(address(_recipient))));
+        publicInputs[2] = bytes32(uint256(uint160(_recipient)));
         publicInputs[3] = bytes32(_yieldIndex);
         if (!i_borrowVerifier.verify(_proof, publicInputs)) revert PrivacyVault__InvalidBorrowProof();
 

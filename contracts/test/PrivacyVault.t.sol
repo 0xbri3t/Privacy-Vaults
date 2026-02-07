@@ -60,7 +60,7 @@ contract PrivacyVaultTest is TestBase {
             _publicInputs[0],
             _publicInputs[1],
             _publicInputs[2], // collateralNullifierHash
-            payable(address(uint160(uint256(_publicInputs[3])))),
+            address(uint160(uint256(_publicInputs[3]))),
             uint256(_publicInputs[4])
         );
         uint256 denom = privacyVault.DENOMINATION();
@@ -91,7 +91,7 @@ contract PrivacyVaultTest is TestBase {
         vm.prank(attacker);
         vm.expectRevert();
         privacyVault.withdraw(
-            _proof, _publicInputs[0], _publicInputs[1], _publicInputs[2], payable(attacker), uint256(_publicInputs[4])
+            _proof, _publicInputs[0], _publicInputs[1], _publicInputs[2], attacker, uint256(_publicInputs[4])
         );
     }
 
@@ -157,7 +157,7 @@ contract PrivacyVaultTest is TestBase {
             _publicInputs[0],
             _publicInputs[1],
             _publicInputs[2],
-            payable(address(uint160(uint256(_publicInputs[3])))),
+            address(uint160(uint256(_publicInputs[3]))),
             uint256(_publicInputs[4])
         );
 
@@ -198,7 +198,7 @@ contract PrivacyVaultTest is TestBase {
             _publicInputs[0],
             _publicInputs[1],
             _publicInputs[2],
-            payable(address(uint160(uint256(_publicInputs[3])))),
+            address(uint160(uint256(_publicInputs[3]))),
             uint256(_publicInputs[4])
         );
 

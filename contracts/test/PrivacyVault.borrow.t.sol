@@ -30,7 +30,7 @@ contract PrivacyVaultBorrowTest is TestBase {
             proof,
             publicInputs[0], // root
             publicInputs[1], // collateralNullifierHash
-            payable(address(uint160(uint256(publicInputs[2])))), // recipient
+            address(uint160(uint256(publicInputs[2]))), // recipient
             uint256(publicInputs[3]), // yieldIndex
             borrowAmount
         );
@@ -59,7 +59,7 @@ contract PrivacyVaultBorrowTest is TestBase {
             proof,
             publicInputs[0],
             publicInputs[1],
-            payable(address(uint160(uint256(publicInputs[2])))),
+            address(uint160(uint256(publicInputs[2]))),
             uint256(publicInputs[3]),
             maxBorrow + 1
         );
@@ -82,7 +82,7 @@ contract PrivacyVaultBorrowTest is TestBase {
             withdrawInputs[0],
             withdrawInputs[1], // nullifierHash
             withdrawInputs[2], // collateralNullifierHash
-            payable(address(uint160(uint256(withdrawInputs[3])))),
+            address(uint160(uint256(withdrawInputs[3]))),
             uint256(withdrawInputs[4])
         );
 
@@ -98,7 +98,7 @@ contract PrivacyVaultBorrowTest is TestBase {
             borrowProof,
             borrowInputs[0],
             borrowInputs[1],
-            payable(address(uint160(uint256(borrowInputs[2])))),
+            address(uint160(uint256(borrowInputs[2]))),
             uint256(borrowInputs[3]),
             10e6
         );
@@ -121,7 +121,7 @@ contract PrivacyVaultBorrowTest is TestBase {
             proof,
             publicInputs[0],
             publicInputs[1],
-            payable(address(uint160(uint256(publicInputs[2])))),
+            address(uint160(uint256(publicInputs[2]))),
             uint256(publicInputs[3]),
             borrowAmount
         );
@@ -132,7 +132,7 @@ contract PrivacyVaultBorrowTest is TestBase {
             proof,
             publicInputs[0],
             publicInputs[1],
-            payable(address(uint160(uint256(publicInputs[2])))),
+            address(uint160(uint256(publicInputs[2]))),
             uint256(publicInputs[3]),
             borrowAmount
         );
@@ -155,7 +155,7 @@ contract PrivacyVaultBorrowTest is TestBase {
             proof,
             publicInputs[0],
             publicInputs[1],
-            payable(address(uint160(uint256(publicInputs[2])))),
+            address(uint160(uint256(publicInputs[2]))),
             uint256(publicInputs[3]),
             borrowAmount
         );
@@ -198,7 +198,7 @@ contract PrivacyVaultBorrowTest is TestBase {
             borrowProof,
             borrowInputs[0],
             borrowInputs[1],
-            payable(address(uint160(uint256(borrowInputs[2])))),
+            address(uint160(uint256(borrowInputs[2]))),
             uint256(borrowInputs[3]),
             10e6
         );
@@ -212,7 +212,7 @@ contract PrivacyVaultBorrowTest is TestBase {
             withdrawInputs[0],
             withdrawInputs[1],
             withdrawInputs[2],
-            payable(address(uint160(uint256(withdrawInputs[3])))),
+            address(uint160(uint256(withdrawInputs[3]))),
             uint256(withdrawInputs[4])
         );
     }
@@ -233,7 +233,7 @@ contract PrivacyVaultBorrowTest is TestBase {
             borrowProof,
             borrowInputs[0],
             borrowInputs[1],
-            payable(address(uint160(uint256(borrowInputs[2])))),
+            address(uint160(uint256(borrowInputs[2]))),
             uint256(borrowInputs[3]),
             10e6
         );
@@ -252,7 +252,7 @@ contract PrivacyVaultBorrowTest is TestBase {
             withdrawInputs[0],
             withdrawInputs[1],
             withdrawInputs[2],
-            payable(address(uint160(uint256(withdrawInputs[3])))),
+            address(uint160(uint256(withdrawInputs[3]))),
             uint256(withdrawInputs[4])
         );
         assertTrue(usdc.balanceOf(borrower) > recipientBefore, "Borrower should receive withdrawn funds");
@@ -274,7 +274,7 @@ contract PrivacyVaultBorrowTest is TestBase {
             proof,
             publicInputs[0],
             publicInputs[1],
-            payable(address(uint160(uint256(publicInputs[2])))),
+            address(uint160(uint256(publicInputs[2]))),
             uint256(publicInputs[3]),
             borrowAmount
         );
@@ -308,7 +308,7 @@ contract PrivacyVaultBorrowTest is TestBase {
             proof,
             publicInputs[0],
             publicInputs[1],
-            payable(address(uint160(uint256(publicInputs[2])))),
+            address(uint160(uint256(publicInputs[2]))),
             uint256(publicInputs[3]),
             borrowAmount
         );
@@ -332,7 +332,7 @@ contract PrivacyVaultBorrowTest is TestBase {
                 proof,
                 publicInputs[0],
                 publicInputs[1],
-                payable(address(uint160(uint256(publicInputs[2])))),
+                address(uint160(uint256(publicInputs[2]))),
                 uint256(publicInputs[3]),
                 50e6
             );
@@ -369,14 +369,14 @@ contract PrivacyVaultBorrowTest is TestBase {
         (bytes memory proof1, bytes32[] memory inputs1) =
             _getProof(nullifier1, secret1, recipient, bytes32(yieldIndex), leaves, true);
         privacyVault.borrow(
-            proof1, inputs1[0], inputs1[1], payable(address(uint160(uint256(inputs1[2])))), uint256(inputs1[3]), 30e6
+            proof1, inputs1[0], inputs1[1], address(uint160(uint256(inputs1[2]))), uint256(inputs1[3]), 30e6
         );
 
         // Borrow against deposit 2
         (bytes memory proof2, bytes32[] memory inputs2) =
             _getProof(nullifier2, secret2, borrower, bytes32(yieldIndex), leaves, true);
         privacyVault.borrow(
-            proof2, inputs2[0], inputs2[1], payable(address(uint160(uint256(inputs2[2])))), uint256(inputs2[3]), 50e6
+            proof2, inputs2[0], inputs2[1], address(uint160(uint256(inputs2[2]))), uint256(inputs2[3]), 50e6
         );
 
         // Both loans should be active

@@ -101,7 +101,7 @@ export async function handleLoanInfo(
 }
 
 /**
- * Returns the relayer fee configuration for a vault
+ * Returns the fee configuration for a vault
  */
 export async function handleFeeInfo(
   req: Request,
@@ -249,7 +249,7 @@ export async function handleFaucetClaim(
     const response = await fetch("https://api.circle.com/v1/faucet/drips", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer TEST_API_KEY:${vaultConfig.circleApiKey}`,
+        "Authorization": `Bearer ${vaultConfig.circleApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

@@ -8,7 +8,7 @@ import { getBarretenberg } from '../zk/barretenberg.ts'
 import { vaultAbi } from '../contracts/abis.ts'
 import { useSponsoredTransaction } from './useSponsoredTransaction.ts'
 
-const BACKEND_URL = import.meta.env.VITE_RELAYER_URL || 'http://localhost:3007'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3007'
 
 export type WithdrawStep =
   | 'idle'

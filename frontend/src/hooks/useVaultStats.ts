@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 
-const RELAYER_URL = import.meta.env.VITE_RELAYER_URL || 'http://localhost:3007'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3007'
 
 interface DepositEntry {
   leafIndex: number
@@ -40,7 +40,7 @@ export function useVaultStats(vaultAddress: string | undefined, chainId: number)
     setIsLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${RELAYER_URL}/api/vault/stats?vaultAddress=${address}&chainId=${chain}`)
+      const res = await fetch(`${BACKEND_URL}/api/vault/stats?vaultAddress=${address}&chainId=${chain}`)
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error || `HTTP ${res.status}`)

@@ -4,7 +4,7 @@ import { bytesToHex } from '../zk/utils.ts'
 import { getBarretenberg } from '../zk/barretenberg.ts'
 import { formatRelativeTime } from './useVaultStats.ts'
 
-const RELAYER_URL = import.meta.env.VITE_RELAYER_URL || 'http://localhost:3007'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3007'
 
 export interface NoteMetadata {
   isValid: boolean
@@ -79,7 +79,7 @@ export function useNoteMetadata(
 
         // Step 3: Fetch commitments from backend
         const commitmentsRes = await fetch(
-          `${RELAYER_URL}/api/vault/commitments?vaultAddress=${encodeURIComponent(vaultAddress)}`,
+          `${BACKEND_URL}/api/vault/commitments?vaultAddress=${encodeURIComponent(vaultAddress)}`,
         )
         if (!commitmentsRes.ok) {
           throw new Error('Failed to fetch commitments')
@@ -96,7 +96,7 @@ export function useNoteMetadata(
 
         // Step 5: Fetch stats to get timestamp
         const statsRes = await fetch(
-          `${RELAYER_URL}/api/vault/stats?vaultAddress=${encodeURIComponent(vaultAddress)}`,
+          `${BACKEND_URL}/api/vault/stats?vaultAddress=${encodeURIComponent(vaultAddress)}`,
         )
         if (!statsRes.ok) {
           throw new Error('Failed to fetch vault stats')

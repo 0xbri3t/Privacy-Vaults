@@ -3,7 +3,7 @@ import { createPublicClient, http, type Address } from 'viem'
 import { baseSepolia } from 'viem/chains'
 import { getUSDCBalance } from './useUsdcBalance'
 
-const RELAYER_URL = import.meta.env.VITE_RELAYER_URL || 'http://localhost:3007'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3007'
 const STORAGE_KEY = 'faucet_last_claim'
 const COOLDOWN_MS = 24 * 60 * 60 * 1000 // 24 hours
 const USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e' as Address
@@ -31,7 +31,7 @@ export function useFaucetClaim(address: string | undefined, isTestnet: boolean) 
         if (balance > 0n) return // User has USDC, skip faucet
 
         // Fire and forget - no error handling needed
-        return fetch(`${RELAYER_URL}/api/vault/claim-faucet`, {
+        return fetch(`${BACKEND_URL}/api/vault/claim-faucet`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ address }),

@@ -7,7 +7,7 @@ import { RECEIVE_WITH_AUTHORIZATION_TYPES, vaultAbi } from '../contracts/abis.ts
 import type { NetworkConfig } from '../contracts/addresses.ts'
 import { useSponsoredTransaction } from './useSponsoredTransaction.ts'
 
-const BACKEND_URL = import.meta.env.VITE_RELAYER_URL || 'http://localhost:3007'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3007'
 
 export type RepayStep =
   | 'idle'

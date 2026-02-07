@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { decodeNote } from '../zk/note.ts'
 import { computeCollateralNullifierHash } from '../zk/proof.ts'
 
-const RELAYER_URL = import.meta.env.VITE_RELAYER_URL || 'http://localhost:3007'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3007'
 
 interface LoanInfo {
   debt: string
@@ -54,7 +54,7 @@ export function useLoanInfo(noteInput: string, vaultAddress: string) {
         const collateralNullifierHash = await computeCollateralNullifierHash(nullifier)
 
         const res = await fetch(
-          `${RELAYER_URL}/api/vault/loan?vaultAddress=${encodeURIComponent(vaultAddress)}&collateralNullifierHash=${encodeURIComponent(collateralNullifierHash)}`,
+          `${BACKEND_URL}/api/vault/loan?vaultAddress=${encodeURIComponent(vaultAddress)}&collateralNullifierHash=${encodeURIComponent(collateralNullifierHash)}`,
         )
         if (!res.ok) throw new Error('Failed to fetch loan info')
         const data = await res.json()

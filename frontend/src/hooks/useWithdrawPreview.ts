@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-const RELAYER_URL = import.meta.env.VITE_RELAYER_URL || 'http://localhost:3007'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3007'
 
 interface WithdrawPreview {
   payout: string
@@ -43,8 +43,8 @@ export function useWithdrawPreview(
 
       try {
         const [feeRes, yieldRes] = await Promise.all([
-          fetch(`${RELAYER_URL}/api/vault/fee?vaultAddress=${encodeURIComponent(vaultAddress)}`),
-          fetch(`${RELAYER_URL}/api/vault/yield-index?vaultAddress=${encodeURIComponent(vaultAddress)}`),
+          fetch(`${BACKEND_URL}/api/vault/fee?vaultAddress=${encodeURIComponent(vaultAddress)}`),
+          fetch(`${BACKEND_URL}/api/vault/yield-index?vaultAddress=${encodeURIComponent(vaultAddress)}`),
         ])
 
         if (!feeRes.ok || !yieldRes.ok) {

@@ -152,7 +152,7 @@ export async function getLoanInfo(
 }
 
 /**
- * Reads the relayer fee configuration from the vault contract
+ * Reads the fee configuration from the vault contract
  */
 export async function getFeeInfo(
     vaultAddress: string,

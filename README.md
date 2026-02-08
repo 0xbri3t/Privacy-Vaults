@@ -1,5 +1,5 @@
 # Privacy Vaults
- ***Would you share how much you borrow from a bank?***
+ ***Would you share how much you borrowed from a bank?***
 
  ***What if you could borrow money... without anyone knowing you exist?***
 #
@@ -143,6 +143,10 @@ Privacy-Vaults/
 - [Node.js](https://nodejs.org/) >= 18
 
 > Circuit artifacts and contract deployments are already included in the repository. Nargo and Foundry are only needed if you want to modify the circuits or contracts.
+
+### Environment Variables
+
+Both the backend and frontend require environment variables for Openfort, Pimlico, and other services. Copy the `.env.example` files and fill in the values. For a detailed guide on obtaining and configuring all required keys (Openfort publishable key, Shield key, policy ID, encrypted session endpoint, etc.), see the [Openfort EIP-7702 environment configuration guide](https://www.openfort.io/docs/recipes/7702#environment-configuration).
 
 ### Run Backend
 

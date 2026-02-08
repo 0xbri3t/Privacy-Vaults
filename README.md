@@ -1,4 +1,6 @@
 # Privacy Vaults
+ ***Would you share how much you borrow from a bank?***
+
  ***What if you could borrow money... without anyone knowing you exist?***
 #
 

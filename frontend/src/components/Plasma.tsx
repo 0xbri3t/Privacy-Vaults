@@ -27,7 +27,7 @@ void main() {
 }
 `
 
-const fragment = `#version 300 es
+const getFragment = (iterations: number) => `#version 300 es
 precision highp float;
 uniform vec2 iResolution;
 uniform float iTime;
@@ -51,7 +51,7 @@ void mainImage(out vec4 o, vec2 C) {
   float i, d, z, T = iTime * uSpeed * uDirection;
   vec3 O, p, S;
 
-  for (vec2 r = iResolution.xy, Q; ++i < 60.; O += o.w/d*o.xyz) {
+  for (vec2 r = iResolution.xy, Q; ++i < ${iterations}.; O += o.w/d*o.xyz) {
     p = z*normalize(vec3(C-.5*r,r.y));
     p.z -= 4.;
     S = p;
@@ -124,7 +124,7 @@ export function Plasma({
 
     const program = new Program(gl, {
       vertex,
-      fragment,
+      fragment: getFragment(isMobile ? 30 : 60),
       uniforms: {
         iTime: { value: 0 },
         iResolution: { value: new Float32Array([1, 1]) },
@@ -172,9 +172,39 @@ export function Plasma({
     setSize()
 
     let raf = 0
+    let skipFrame = false
+    let scrolling = false
+    let scrollTimeout = 0
+    let pausedTime = 0
+    let scrollPauseStart = 0
     const t0 = performance.now()
+
+    const handleScroll = isMobile
+      ? () => {
+          if (!scrolling) {
+            scrolling = true
+            scrollPauseStart = performance.now()
+          }
+          clearTimeout(scrollTimeout)
+          scrollTimeout = window.setTimeout(() => {
+            scrolling = false
+            pausedTime += performance.now() - scrollPauseStart
+          }, 150)
+        }
+      : undefined
+
+    if (handleScroll) {
+      window.addEventListener('scroll', handleScroll, { passive: true })
+    }
+
     const loop = (t: number) => {
-      let timeValue = (t - t0) * 0.001
+      raf = requestAnimationFrame(loop)
+      if (scrolling) return
+      if (isMobile) {
+        skipFrame = !skipFrame
+        if (skipFrame) return
+      }
+      let timeValue = (t - t0 - pausedTime) * 0.001
       if (direction === 'pingpong') {
         const pingpongDuration = 10
         const segmentTime = timeValue % pingpongDuration
@@ -188,13 +218,16 @@ export function Plasma({
         ;(program.uniforms.iTime as any).value = timeValue
       }
       renderer.render({ scene: mesh })
-      raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
 
     return () => {
       cancelAnimationFrame(raf)
+      clearTimeout(scrollTimeout)
       ro.disconnect()
+      if (handleScroll) {
+        window.removeEventListener('scroll', handleScroll)
+      }
       if (mouseInteractive) {
         container.removeEventListener('mousemove', handleMouseMove)
       }
